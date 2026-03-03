@@ -1,0 +1,3868 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام الحضور والغياب المدرسي</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --primary: #1a3a5c;
+    --secondary: #0f6eb4;
+    --accent: #f0a500;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --excuse: #8b5cf6;
+    --late: #f97316;
+    --bg: #f0f4f8;
+    --card: #ffffff;
+    --text: #1e293b;
+    --text-light: #64748b;
+    --border: #e2e8f0;
+    --sidebar-w: 260px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Tajawal', 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    position: fixed;
+    top: 0; right: 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+    background: linear-gradient(160deg, #0d2137 0%, #1a3a5c 60%, #0f6eb4 100%);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    box-shadow: -4px 0 20px rgba(0,0,0,.25);
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+    text-align: center;
+  }
+  .sidebar-logo .logo-icon {
+    width: 56px; height: 56px;
+    background: var(--accent);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    margin: 0 auto 10px;
+    box-shadow: 0 4px 14px rgba(240,165,0,.4);
+  }
+  .sidebar-logo h2 {
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+  .sidebar-logo p { color: rgba(255,255,255,.5); font-size: 11px; margin-top: 2px; }
+
+  .sidebar-nav { padding: 16px 12px; flex: 1; }
+  .nav-section-title {
+    color: rgba(255,255,255,.35);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 10px 8px 6px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    color: rgba(255,255,255,.7);
+    cursor: pointer;
+    transition: all .2s;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 3px;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.1); color: #fff; }
+  .nav-item.active {
+    background: rgba(240,165,0,.2);
+    color: var(--accent);
+    border-color: rgba(240,165,0,.3);
+  }
+  .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
+  .nav-badge {
+    margin-right: auto;
+    background: var(--danger);
+    color: #fff;
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+
+  /* ===== MAIN ===== */
+  .main {
+    margin-right: var(--sidebar-w);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    background: var(--card);
+    padding: 14px 28px;
+    display: flex; align-items: center; gap: 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 1px 10px rgba(0,0,0,.06);
+  }
+  .topbar-title { font-size: 18px; font-weight: 700; color: var(--primary); flex: 1; }
+  .topbar-date {
+    background: var(--bg);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-light);
+    border: 1px solid var(--border);
+  }
+  .btn {
+    padding: 8px 18px;
+    border-radius: 9px;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all .2s;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn-primary { background: var(--secondary); color: #fff; }
+  .btn-primary:hover { background: var(--primary); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,110,180,.3); }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { filter: brightness(1.1); }
+  .btn-warning { background: var(--warning); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-outline { background: transparent; color: var(--secondary); border: 1.5px solid var(--secondary); }
+  .btn-whatsapp { background: #25d366; color: #fff; }
+  .btn-whatsapp:hover { background: #1ebe5d; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 7px; }
+
+  .content { padding: 28px; flex: 1; }
+
+  /* ===== PAGES ===== */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ===== STATS CARDS ===== */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 22px;
+    display: flex; align-items: center; gap: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    border: 1px solid var(--border);
+    transition: transform .2s, box-shadow .2s;
+    position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; right: 0;
+    width: 4px; height: 100%;
+  }
+  .stat-card.present::before { background: var(--success); }
+  .stat-card.absent::before { background: var(--danger); }
+  .stat-card.late::before { background: var(--late); }
+  .stat-card.excuse::before { background: var(--excuse); }
+  .stat-card.total::before { background: var(--secondary); }
+  .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+  .stat-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .stat-icon.green { background: rgba(16,185,129,.12); }
+  .stat-icon.red { background: rgba(239,68,68,.12); }
+  .stat-icon.orange { background: rgba(249,115,22,.12); }
+  .stat-icon.purple { background: rgba(139,92,246,.12); }
+  .stat-icon.blue { background: rgba(15,110,180,.12); }
+  .stat-info h3 { font-size: 28px; font-weight: 800; line-height: 1; }
+  .stat-info p { font-size: 13px; color: var(--text-light); margin-top: 4px; }
+
+  /* ===== TABLE ===== */
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .card-header h3 { font-size: 16px; font-weight: 700; color: var(--primary); }
+  .card-body { padding: 20px; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    background: var(--bg);
+    padding: 12px 14px;
+    text-align: right;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(240,244,248,.5); }
+
+  .student-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+    color: #fff; margin-left: 10px;
+    flex-shrink: 0;
+  }
+  .student-info { display: flex; align-items: center; }
+  .student-name { font-weight: 600; font-size: 14px; }
+  .student-id { font-size: 11px; color: var(--text-light); }
+
+  .badge {
+    padding: 4px 11px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .badge-success { background: rgba(16,185,129,.12); color: var(--success); }
+  .badge-danger { background: rgba(239,68,68,.12); color: var(--danger); }
+  .badge-warning { background: rgba(245,158,11,.12); color: var(--warning); }
+  .badge-orange { background: rgba(249,115,22,.12); color: var(--late); }
+  .badge-purple { background: rgba(139,92,246,.12); color: var(--excuse); }
+  .badge-blue { background: rgba(15,110,180,.12); color: var(--secondary); }
+
+  /* ===== ATTENDANCE FORM ===== */
+  .attendance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+  .attendance-card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 18px;
+    border: 2px solid var(--border);
+    transition: all .2s;
+  }
+  .attendance-card.status-present { border-color: var(--success); background: rgba(16,185,129,.04); }
+  .attendance-card.status-absent { border-color: var(--danger); background: rgba(239,68,68,.04); }
+  .attendance-card.status-late { border-color: var(--late); background: rgba(249,115,22,.04); }
+  .attendance-card.status-excuse { border-color: var(--excuse); background: rgba(139,92,246,.04); }
+
+  .att-student { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .att-student-info h4 { font-size: 15px; font-weight: 700; }
+  .att-student-info p { font-size: 12px; color: var(--text-light); }
+
+  .status-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .status-btn {
+    flex: 1; min-width: 70px;
+    padding: 7px 4px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all .15s;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .status-btn .s-icon { font-size: 16px; }
+  .status-btn.active-present { background: var(--success); color: #fff; border-color: var(--success); }
+  .status-btn.active-absent { background: var(--danger); color: #fff; border-color: var(--danger); }
+  .status-btn.active-late { background: var(--late); color: #fff; border-color: var(--late); }
+  .status-btn.active-excuse { background: var(--excuse); color: #fff; border-color: var(--excuse); }
+  .status-btn:hover:not(.active-present):not(.active-absent):not(.active-late):not(.active-excuse) {
+    background: var(--bg); border-color: var(--secondary);
+  }
+
+  .note-input {
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    font-family: inherit;
+    font-size: 13px;
+    resize: none;
+    color: var(--text);
+    background: var(--bg);
+    transition: border-color .2s;
+  }
+  .note-input:focus { outline: none; border-color: var(--secondary); }
+
+  /* ===== FORM CONTROLS ===== */
+  .form-group { margin-bottom: 18px; }
+  .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 7px; }
+  .form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 9px;
+    border: 1.5px solid var(--border);
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    background: #fff;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .form-control:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(15,110,180,.1); }
+  .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 2000;
+    display: none; align-items: center; justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(3px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 18px;
+    padding: 28px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    animation: modalIn .25s ease;
+  }
+  @keyframes modalIn { from { transform: scale(.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+  .modal-header h3 { font-size: 18px; font-weight: 700; color: var(--primary); }
+  .modal-close { background: var(--bg); border: none; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 18px; color: var(--text-light); display: flex; align-items: center; justify-content: center; }
+  .modal-close:hover { background: var(--danger); color: #fff; }
+
+  /* ===== CHARTS ===== */
+  .chart-bar-wrap { display: flex; flex-direction: column; gap: 10px; }
+  .chart-bar-row { display: flex; align-items: center; gap: 12px; }
+  .chart-bar-label { font-size: 13px; font-weight: 600; min-width: 70px; text-align: right; }
+  .chart-bar-bg { flex: 1; background: var(--bg); border-radius: 8px; height: 32px; overflow: hidden; position: relative; }
+  .chart-bar-fill { height: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: flex-end; padding-left: 10px; transition: width 1s cubic-bezier(.4,0,.2,1); }
+  .chart-bar-val { font-size: 12px; font-weight: 700; color: #fff; padding: 0 10px; }
+
+  /* ===== TABS ===== */
+  .tabs { display: flex; gap: 6px; margin-bottom: 20px; background: var(--bg); padding: 5px; border-radius: 11px; width: fit-content; }
+  .tab-btn { padding: 8px 18px; border-radius: 8px; border: none; background: transparent; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--text-light); transition: all .2s; }
+  .tab-btn.active { background: var(--card); color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+
+  /* ===== SEARCH ===== */
+  .search-box {
+    position: relative;
+  }
+  .search-box input {
+    padding: 9px 14px 9px 38px;
+    border-radius: 9px;
+    border: 1.5px solid var(--border);
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    width: 220px;
+    transition: all .2s;
+  }
+  .search-box input:focus { outline: none; border-color: var(--secondary); background: #fff; width: 260px; }
+  .search-box::before {
+    content: '🔍';
+    position: absolute;
+    right: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 14px;
+  }
+
+  /* ===== FILTER ROW ===== */
+  .filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; }
+  .filter-row select {
+    padding: 8px 12px;
+    border-radius: 9px;
+    border: 1.5px solid var(--border);
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--card);
+    cursor: pointer;
+  }
+  .filter-row select:focus { outline: none; border-color: var(--secondary); }
+
+  /* ===== REPORT SECTION ===== */
+  .report-header {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #fff;
+    padding: 24px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 20px;
+  }
+  .report-header .rh-icon { font-size: 48px; }
+  .report-header h2 { font-size: 22px; font-weight: 800; }
+  .report-header p { font-size: 13px; opacity: .8; margin-top: 4px; }
+
+  /* ===== WHATSAPP SECTION ===== */
+  .wa-card {
+    background: linear-gradient(135deg, #075e54, #25d366);
+    border-radius: 16px;
+    padding: 24px;
+    color: #fff;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .wa-card::after {
+    content: '📱';
+    position: absolute;
+    left: 20px; bottom: -10px;
+    font-size: 80px;
+    opacity: .15;
+  }
+  .wa-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .wa-card p { font-size: 13px; opacity: .85; }
+
+  .wa-template {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    margin-top: 16px;
+    white-space: pre-wrap;
+  }
+
+  /* ===== TOAST ===== */
+  .toast-container { position: fixed; bottom: 24px; left: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+  .toast {
+    background: var(--card);
+    border-right: 4px solid var(--success);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0,0,0,.15);
+    display: flex; align-items: center; gap: 10px;
+    animation: toastIn .3s ease;
+    max-width: 300px;
+  }
+  .toast.error { border-color: var(--danger); }
+  @keyframes toastIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* ===== COLORS ===== */
+  .colors-1 { background: #ef4444; }
+  .colors-2 { background: #3b82f6; }
+  .colors-3 { background: #10b981; }
+  .colors-4 { background: #f59e0b; }
+  .colors-5 { background: #8b5cf6; }
+  .colors-6 { background: #ec4899; }
+  .colors-7 { background: #06b6d4; }
+  .colors-8 { background: #84cc16; }
+
+  /* ===== PROGRESS CIRCLE ===== */
+  .progress-circle { position: relative; width: 80px; height: 80px; }
+  .progress-circle svg { transform: rotate(-90deg); }
+  .progress-circle .val { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--text-light); }
+  .empty-state .es-icon { font-size: 56px; margin-bottom: 14px; opacity: .5; }
+  .empty-state h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    :root { --sidebar-w: 0px; }
+    .sidebar { transform: translateX(100%); transition: transform .3s; }
+    .sidebar.open { transform: translateX(0); width: 260px; }
+    .main { margin-right: 0; }
+    .content { padding: 16px; }
+    .topbar { padding: 12px 16px; }
+  }
+
+  /* ===== EXCEL IMPORT ===== */
+  .excel-drop-zone {
+    border: 2.5px dashed #10b981;
+    border-radius: 16px;
+    padding: 36px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+    cursor: pointer;
+    transition: all .25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .excel-drop-zone:hover, .excel-drop-zone.drag-over {
+    border-color: #059669;
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    transform: scale(1.01);
+    box-shadow: 0 8px 24px rgba(16,185,129,.2);
+  }
+  .excel-drop-zone .dz-icon {
+    font-size: 52px;
+    margin-bottom: 12px;
+    display: block;
+    filter: drop-shadow(0 4px 8px rgba(16,185,129,.3));
+  }
+  .excel-drop-zone h4 {
+    font-size: 16px; font-weight: 800;
+    color: #065f46; margin-bottom: 6px;
+  }
+  .excel-drop-zone p { font-size: 13px; color: #047857; }
+  .excel-drop-zone .dz-formats {
+    display: inline-flex; gap: 6px; margin-top: 12px;
+  }
+  .excel-drop-zone .dz-format-badge {
+    background: rgba(16,185,129,.15);
+    color: #065f46;
+    border: 1px solid rgba(16,185,129,.3);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  #excelFileInput { display: none; }
+
+  /* Column mapper */
+  .col-mapper {
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+    border: 1.5px solid var(--border);
+  }
+  .col-mapper h4 {
+    font-size: 14px; font-weight: 700;
+    color: var(--primary); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .col-mapper-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .col-mapper-item label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; color: var(--text);
+    margin-bottom: 6px;
+  }
+  .col-mapper-item .required-star { color: var(--danger); }
+
+  /* Preview table */
+  .preview-wrap {
+    max-height: 280px;
+    overflow: auto;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    margin-top: 14px;
+  }
+  .preview-wrap table { min-width: 600px; }
+  .preview-wrap th {
+    background: var(--primary);
+    color: #fff;
+    font-size: 12px;
+    padding: 10px 12px;
+    position: sticky; top: 0;
+    z-index: 5;
+  }
+  .preview-wrap td { font-size: 13px; padding: 9px 12px; }
+  .preview-row-ok td { background: rgba(16,185,129,.05); }
+  .preview-row-err td { background: rgba(239,68,68,.06); }
+  .preview-row-dup td { background: rgba(245,158,11,.07); }
+
+  /* Status dot in preview */
+  .row-status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .dot-ok { background: var(--success); }
+  .dot-err { background: var(--danger); }
+  .dot-dup { background: var(--warning); }
+
+  /* Import summary */
+  .import-summary {
+    display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;
+  }
+  .import-sum-item {
+    flex: 1; min-width: 100px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    text-align: center;
+  }
+  .import-sum-item .isi-val { font-size: 24px; font-weight: 900; }
+  .import-sum-item .isi-lbl { font-size: 11px; margin-top: 3px; font-weight: 600; }
+  .isi-total { background: rgba(15,110,180,.1); color: var(--secondary); }
+  .isi-ok { background: rgba(16,185,129,.1); color: var(--success); }
+  .isi-dup { background: rgba(245,158,11,.1); color: var(--warning); }
+  .isi-err { background: rgba(239,68,68,.1); color: var(--danger); }
+
+  /* Step indicator */
+  .import-steps {
+    display: flex; align-items: center; gap: 0;
+    margin-bottom: 20px;
+    padding: 0 10px;
+  }
+  .import-step {
+    display: flex; flex-direction: column; align-items: center;
+    flex: 1; position: relative;
+  }
+  .import-step::after {
+    content: '';
+    position: absolute;
+    top: 15px; left: 50%;
+    width: 100%; height: 2px;
+    background: var(--border);
+    z-index: 0;
+  }
+  .import-step:last-child::after { display: none; }
+  .import-step .step-num {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--text-light);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px;
+    position: relative; z-index: 1;
+    transition: all .3s;
+  }
+  .import-step .step-label {
+    font-size: 11px; font-weight: 600;
+    color: var(--text-light);
+    margin-top: 5px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .import-step.done .step-num { background: var(--success); color: #fff; }
+  .import-step.active .step-num { background: var(--secondary); color: #fff; box-shadow: 0 0 0 4px rgba(15,110,180,.2); }
+  .import-step.done::after { background: var(--success); }
+
+  /* Sample download btn */
+  .sample-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1.5px solid var(--success);
+    background: transparent;
+    color: var(--success);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    text-decoration: none;
+  }
+  .sample-btn:hover { background: var(--success); color: #fff; }
+
+  /* Excel import button in topbar area */
+  .btn-excel { background: #217346; color: #fff; }
+  .btn-excel:hover { background: #1a5c38; }
+  .warn-pulse {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    border: 1.5px solid #f97316;
+    color: #c2410c;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    animation: warnPulse 2s ease-in-out infinite;
+    white-space: nowrap;
+  }
+  .warn-pulse.critical {
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    border-color: #ef4444;
+    color: #b91c1c;
+    animation: criticalPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes warnPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(249,115,22,.4); }
+    50% { box-shadow: 0 0 0 5px rgba(249,115,22,0); }
+  }
+  @keyframes criticalPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.5); transform: scale(1); }
+    50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); transform: scale(1.03); }
+  }
+  .warn-row td { background: rgba(254,243,199,.3) !important; }
+  .critical-row td { background: rgba(254,226,226,.35) !important; }
+
+  /* Warning indicator in student name cell */
+  .warn-indicator {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    font-size: 13px;
+    margin-right: 4px;
+    flex-shrink: 0;
+    cursor: help;
+    position: relative;
+  }
+  .warn-indicator:hover .warn-tooltip {
+    display: block;
+  }
+  .warn-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    right: 50%;
+    transform: translateX(50%);
+    background: #1e293b;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 7px;
+    white-space: nowrap;
+    z-index: 999;
+    pointer-events: none;
+  }
+  .warn-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%; right: 50%;
+    transform: translateX(50%);
+    border: 5px solid transparent;
+    border-top-color: #1e293b;
+  }
+
+  /* Dashboard warning banner */
+  .warning-banner {
+    background: linear-gradient(135deg, #fff7ed, #ffedd5);
+    border: 2px solid #f97316;
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 14px;
+    animation: warnPulse 2s ease-in-out infinite;
+  }
+  .warning-banner.critical-banner {
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+    border-color: #ef4444;
+    animation: criticalPulse 1.5s ease-in-out infinite;
+  }
+  .warning-banner .wb-icon { font-size: 32px; flex-shrink: 0; }
+  .warning-banner h4 { font-size: 14px; font-weight: 800; color: #9a3412; margin-bottom: 4px; }
+  .warning-banner p { font-size: 12px; color: #c2410c; }
+  .warning-banner .wb-count {
+    margin-right: auto;
+    background: #f97316;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 900;
+    width: 46px; height: 46px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .warning-banner.critical-banner h4 { color: #7f1d1d; }
+  .warning-banner.critical-banner p { color: #b91c1c; }
+  .warning-banner.critical-banner .wb-count { background: #ef4444; }
+
+  /* ===== PRINT WARNING MODAL ===== */
+  .print-preview {
+    background: #fff;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 30px;
+    font-family: 'Tajawal', Arial, sans-serif;
+    direction: rtl;
+    min-height: 300px;
+    position: relative;
+    overflow: hidden;
+  }
+  .print-preview .pp-watermark {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%) rotate(-30deg);
+    font-size: 80px;
+    opacity: .04;
+    pointer-events: none;
+    white-space: nowrap;
+    font-weight: 900;
+  }
+  .print-preview .pp-header {
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 3px double #1a3a5c;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+  }
+  .print-preview .pp-school-name {
+    font-size: 18px; font-weight: 800; color: #1a3a5c;
+  }
+  .print-preview .pp-logo {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #1a3a5c, #0f6eb4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    color: #fff;
+  }
+  .print-preview .pp-title {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 900;
+    color: #b91c1c;
+    margin: 14px 0;
+    padding: 10px;
+    border: 2px solid #ef4444;
+    border-radius: 8px;
+    background: #fef2f2;
+    letter-spacing: 1px;
+  }
+  .pp-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .pp-info-item {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border-right: 3px solid #1a3a5c;
+  }
+  .pp-info-label { font-size: 11px; color: #64748b; font-weight: 600; margin-bottom: 3px; }
+  .pp-info-value { font-size: 14px; font-weight: 700; color: #1e293b; }
+  .pp-body-text {
+    font-size: 13px;
+    line-height: 2;
+    color: #374151;
+    margin: 14px 0;
+    padding: 12px 16px;
+    background: #fffbeb;
+    border-right: 4px solid #f59e0b;
+    border-radius: 8px;
+  }
+  .pp-signature {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    padding-top: 14px;
+    border-top: 1px dashed #e2e8f0;
+  }
+  .pp-sig-box {
+    text-align: center;
+    width: 140px;
+  }
+  .pp-sig-line { border-top: 1.5px solid #94a3b8; margin-bottom: 6px; }
+  .pp-sig-label { font-size: 11px; color: #64748b; }
+
+  /* Warning level selector */
+  .level-selector {
+    display: flex; gap: 8px; margin-bottom: 16px;
+  }
+  .level-btn {
+    flex: 1; padding: 10px 8px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    transition: all .2s;
+    text-align: center;
+  }
+  .level-btn.active-l1 { background: #fff7ed; border-color: #f97316; color: #c2410c; }
+  .level-btn.active-l2 { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+  .level-btn.active-l3 { background: #fef2f2; border-color: #ef4444; color: #b91c1c; }
+
+  /* ===== PRINT STYLES ===== */
+  @media print {
+    body * { visibility: hidden !important; }
+    #printArea, #printArea * { visibility: visible !important; }
+    #printArea {
+      position: fixed !important;
+      inset: 0 !important;
+      padding: 30px !important;
+      background: white !important;
+    }
+    .pp-watermark { opacity: .06 !important; }
+  }
+
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ===== LOGIN SCREEN ===== */
+  #loginScreen {
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, #0d2137 0%, #1a3a5c 50%, #0f4c8a 100%);
+    z-index: 99999;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    overflow: hidden;
+  }
+  #loginScreen::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(15,110,180,.3) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(240,165,0,.15) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .login-dots {
+    position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+  }
+  .login-dot {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,.04);
+    animation: floatDot linear infinite;
+  }
+  @keyframes floatDot {
+    0% { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
+  }
+  .login-card {
+    background: rgba(255,255,255,.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 24px;
+    padding: 44px 40px;
+    width: 100%;
+    max-width: 420px;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5);
+    animation: loginCardIn .6s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes loginCardIn {
+    from { transform: translateY(40px) scale(.95); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  .login-logo {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .login-logo .logo-icon-lg {
+    width: 76px; height: 76px;
+    background: linear-gradient(135deg, var(--accent), #f59e0b);
+    border-radius: 22px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 38px;
+    margin: 0 auto 16px;
+    box-shadow: 0 8px 32px rgba(240,165,0,.4);
+    animation: logoPulse 3s ease-in-out infinite;
+  }
+  @keyframes logoPulse {
+    0%,100% { box-shadow: 0 8px 32px rgba(240,165,0,.4); }
+    50% { box-shadow: 0 8px 48px rgba(240,165,0,.7); }
+  }
+  .login-logo h1 { color: #fff; font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+  .login-logo p { color: rgba(255,255,255,.5); font-size: 13px; }
+
+  .login-field { margin-bottom: 18px; }
+  .login-field label {
+    display: block;
+    color: rgba(255,255,255,.7);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .login-input-wrap { position: relative; }
+  .login-input {
+    width: 100%;
+    padding: 13px 16px 13px 44px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(255,255,255,.15);
+    background: rgba(255,255,255,.07);
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    transition: all .2s;
+    outline: none;
+  }
+  .login-input::placeholder { color: rgba(255,255,255,.3); }
+  .login-input:focus {
+    border-color: var(--accent);
+    background: rgba(255,255,255,.1);
+    box-shadow: 0 0 0 3px rgba(240,165,0,.2);
+  }
+  .login-input-icon {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    pointer-events: none;
+  }
+  .login-toggle-pass {
+    position: absolute;
+    right: 14px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none;
+    color: rgba(255,255,255,.4);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    transition: color .2s;
+  }
+  .login-toggle-pass:hover { color: rgba(255,255,255,.8); }
+
+  .login-remember {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 24px;
+    cursor: pointer;
+    color: rgba(255,255,255,.6);
+    font-size: 13px;
+  }
+  .login-remember input { accent-color: var(--accent); width: 15px; height: 15px; }
+
+  .login-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), #f59e0b);
+    color: #fff;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: .5px;
+    box-shadow: 0 4px 20px rgba(240,165,0,.4);
+  }
+  .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(240,165,0,.5); }
+  .login-btn:active { transform: translateY(0); }
+
+  .login-error {
+    background: rgba(239,68,68,.15);
+    border: 1px solid rgba(239,68,68,.3);
+    color: #fca5a5;
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+    animation: shake .4s ease;
+  }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)}
+  }
+  .login-error.show { display: flex; align-items: center; gap: 8px; }
+
+  .login-attempts {
+    text-align: center;
+    color: rgba(255,255,255,.35);
+    font-size: 11px;
+    margin-top: 20px;
+  }
+
+  .login-locked {
+    text-align: center;
+    padding: 20px;
+  }
+  .login-locked .lock-icon { font-size: 48px; margin-bottom: 12px; }
+  .login-locked h3 { color: #fca5a5; font-size: 16px; margin-bottom: 6px; }
+  .login-locked p { color: rgba(255,255,255,.5); font-size: 13px; }
+  .login-locked .countdown { color: var(--accent); font-size: 28px; font-weight: 800; margin: 12px 0; }
+
+  /* User menu in topbar */
+  .user-menu {
+    position: relative;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer;
+  }
+  .user-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: 700;
+    border: 2px solid var(--border);
+  }
+  .user-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .user-role { font-size: 11px; color: var(--text-light); }
+  .user-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px;
+    min-width: 180px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    display: none;
+    z-index: 500;
+    animation: dropIn .2s ease;
+  }
+  @keyframes dropIn { from { transform: translateY(-8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .user-dropdown.open { display: block; }
+  .user-dropdown-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .user-dropdown-item:hover { background: var(--bg); }
+  .user-dropdown-item.danger { color: var(--danger); }
+  .user-dropdown-item.danger:hover { background: rgba(239,68,68,.08); }
+  .user-dropdown-divider { height: 1px; background: var(--border); margin: 6px 0; }
+
+  /* Change password modal styles */
+  .strength-bar {
+    height: 4px; border-radius: 2px;
+    background: var(--border);
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .strength-fill {
+    height: 100%; border-radius: 2px;
+    transition: width .3s, background .3s;
+  }
+
+  /* ===== ALERT ===== */
+  .alert {
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-bottom: 16px;
+    border-right: 4px solid;
+  }
+  .alert-info { background: rgba(15,110,180,.08); border-color: var(--secondary); color: var(--secondary); }
+  .alert-danger { background: rgba(239,68,68,.08); border-color: var(--danger); color: var(--danger); }
+  .alert-success { background: rgba(16,185,129,.08); border-color: var(--success); color: #065f46; }
+
+  /* section headers */
+  .section-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 6px;
+  }
+  .section-sub {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 24px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="loginScreen">
+  <div class="login-dots" id="loginDots"></div>
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon-lg">🏫</div>
+      <h1>نظام الحضور والغياب</h1>
+      <p>المنصة التعليمية الذكية — تسجيل الدخول</p>
+    </div>
+
+    <div id="loginForm">
+      <div class="login-error" id="loginError">
+        <span>⚠️</span><span id="loginErrorMsg">اسم المستخدم أو كلمة المرور غير صحيحة</span>
+      </div>
+
+      <div class="login-field">
+        <label>اسم المستخدم</label>
+        <div class="login-input-wrap">
+          <span class="login-input-icon">👤</span>
+          <input type="text" class="login-input" id="loginUser" placeholder="أدخل اسم المستخدم" autocomplete="username">
+        </div>
+      </div>
+
+      <div class="login-field">
+        <label>كلمة المرور</label>
+        <div class="login-input-wrap">
+          <span class="login-input-icon">🔒</span>
+          <input type="password" class="login-input" id="loginPass" placeholder="أدخل كلمة المرور" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter') doLogin()">
+          <button class="login-toggle-pass" onclick="togglePassVis('loginPass', this)">👁️</button>
+        </div>
+      </div>
+
+      <label class="login-remember">
+        <input type="checkbox" id="rememberMe"> تذكرني على هذا الجهاز
+      </label>
+
+      <button class="login-btn" onclick="doLogin()">🚀 تسجيل الدخول</button>
+
+      <div class="login-attempts" id="attemptsInfo"></div>
+    </div>
+
+    <div id="lockedForm" style="display:none" class="login-locked">
+      <div class="lock-icon">🔒</div>
+      <h3>الحساب مقفل مؤقتاً</h3>
+      <p>تم إدخال كلمة مرور خاطئة 5 مرات</p>
+      <div class="countdown" id="lockCountdown">30</div>
+      <p style="color:rgba(255,255,255,.4);font-size:12px">ثانية متبقية لإعادة المحاولة</p>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal-overlay" id="changePassModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <h3>🔐 تغيير كلمة المرور</h3>
+      <button class="modal-close" onclick="closeModal('changePassModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">كلمة المرور الحالية</label>
+      <div style="position:relative">
+        <input type="password" class="form-control" id="currentPass" placeholder="أدخل كلمة المرور الحالية">
+        <button style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px" onclick="togglePassVis('currentPass',this)">👁️</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">كلمة المرور الجديدة</label>
+      <div style="position:relative">
+        <input type="password" class="form-control" id="newPass" placeholder="8 أحرف على الأقل" oninput="checkStrength()">
+        <button style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px" onclick="togglePassVis('newPass',this)">👁️</button>
+      </div>
+      <div class="strength-bar"><div class="strength-fill" id="strengthFill" style="width:0%"></div></div>
+      <div style="font-size:11px;margin-top:4px;color:var(--text-light)" id="strengthLabel"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">تأكيد كلمة المرور الجديدة</label>
+      <input type="password" class="form-control" id="confirmPass" placeholder="أعد إدخال كلمة المرور الجديدة">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal('changePassModal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="doChangePassword()">💾 حفظ كلمة المرور</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Users Modal -->
+<div class="modal-overlay" id="manageUsersModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3>👥 إدارة المستخدمين</h3>
+      <button class="modal-close" onclick="closeModal('manageUsersModal')">✕</button>
+    </div>
+    <div style="overflow:auto;margin-bottom:16px">
+      <table>
+        <thead><tr><th>المستخدم</th><th>الدور</th><th>آخر دخول</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+        <tbody id="usersTbody"></tbody>
+      </table>
+    </div>
+    <div style="background:var(--bg);border-radius:12px;padding:16px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--primary)">➕ إضافة مستخدم جديد</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">اسم المستخدم</label>
+          <input type="text" class="form-control" id="newUsername" placeholder="بدون مسافات">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">كلمة المرور</label>
+          <input type="password" class="form-control" id="newUserPass" placeholder="8 أحرف على الأقل">
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:12px">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">الاسم الكامل</label>
+          <input type="text" class="form-control" id="newUserFullName" placeholder="الاسم الظاهر">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">الدور</label>
+          <select class="form-control" id="newUserRole">
+            <option value="admin">مدير النظام</option>
+            <option value="teacher">معلم</option>
+            <option value="viewer">مشاهد فقط</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:14px;width:100%" onclick="addUser()">➕ إضافة المستخدم</button>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🏫</div>
+    <h2>نظام الحضور والغياب</h2>
+    <p>المنصة التعليمية الذكية</p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-title">الرئيسية</div>
+    <div class="nav-item active" onclick="navigate('dashboard')">
+      <span class="icon">📊</span> لوحة التحكم
+    </div>
+    <div class="nav-item" onclick="navigate('attendance')">
+      <span class="icon">✅</span> تسجيل الحضور
+      <span class="nav-badge" id="pendingBadge">0</span>
+    </div>
+    <div class="nav-section-title">إدارة البيانات</div>
+    <div class="nav-item" onclick="navigate('students')">
+      <span class="icon">👨‍🎓</span> إدارة الطلاب
+    </div>
+    <div class="nav-item" onclick="navigate('classes')">
+      <span class="icon">🏛️</span> الفصول الدراسية
+    </div>
+    <div class="nav-section-title">التقارير</div>
+    <div class="nav-item" onclick="navigate('reports')">
+      <span class="icon">📋</span> التقارير التفصيلية
+    </div>
+    <div class="nav-item" onclick="navigate('analytics')">
+      <span class="icon">📈</span> الإحصاءات والتحليل
+    </div>
+    <div class="nav-section-title">التواصل</div>
+    <div class="nav-item" onclick="navigate('whatsapp')">
+      <span class="icon">💬</span> إشعارات الواتساب
+    </div>
+    <div class="nav-item" onclick="navigate('settings')">
+      <span class="icon">⚙️</span> الإعدادات
+    </div>
+  </nav>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="pageTitle">لوحة التحكم</div>
+    <div class="topbar-date" id="currentDate"></div>
+    <button class="btn btn-primary" onclick="openAddStudentModal()">
+      <span>+</span> إضافة طالب
+    </button>
+    <div class="user-menu" onclick="toggleUserDropdown()">
+      <div class="user-avatar" id="topUserAvatar">م</div>
+      <div>
+        <div class="user-name" id="topUserName">مدير النظام</div>
+        <div class="user-role" id="topUserRole">مدير</div>
+      </div>
+      <span style="font-size:12px;color:var(--text-light)">▼</span>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="user-dropdown-item" onclick="openModal('"changePassModal"');event.stopPropagation()">🔐 تغيير كلمة المرور</div>
+        <div class="user-dropdown-item" id="manageUsersBtn" onclick="openManageUsers()">👥 إدارة المستخدمين</div>
+        <div class="user-dropdown-divider"></div>
+        <div class="user-dropdown-item danger" onclick="doLogout();event.stopPropagation()">🚪 تسجيل الخروج</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="page active" id="page-dashboard">
+      <div class="section-title">مرحباً بك في نظام الحضور 👋</div>
+      <div class="section-sub" id="dashSubtitle"></div>
+
+      <div class="stats-grid" id="dashStats">
+        <div class="stat-card total">
+          <div class="stat-icon blue">👥</div>
+          <div class="stat-info"><h3 id="totalCount">0</h3><p>إجمالي الطلاب</p></div>
+        </div>
+        <div class="stat-card present">
+          <div class="stat-icon green">✅</div>
+          <div class="stat-info"><h3 id="presentCount">0</h3><p>حاضرون اليوم</p></div>
+        </div>
+        <div class="stat-card absent">
+          <div class="stat-icon red">❌</div>
+          <div class="stat-info"><h3 id="absentCount">0</h3><p>غائبون اليوم</p></div>
+        </div>
+        <div class="stat-card late">
+          <div class="stat-icon orange">⏰</div>
+          <div class="stat-info"><h3 id="lateCount">0</h3><p>متأخرون</p></div>
+        </div>
+        <div class="stat-card excuse">
+          <div class="stat-icon purple">📄</div>
+          <div class="stat-info"><h3 id="excuseCount">0</h3><p>بعذر</p></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;" id="dashGrid">
+        <div class="card">
+          <div class="card-header">
+            <h3>📊 إحصاء الغياب - الأسبوع الحالي</h3>
+          </div>
+          <div class="card-body">
+            <div class="chart-bar-wrap" id="weekChart"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>⚠️ أعلى غياباً</h3></div>
+          <div class="card-body" id="topAbsent"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px" class="card">
+        <div class="card-header">
+          <h3>📅 سجل اليوم</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-whatsapp btn-sm" onclick="sendBulkWhatsapp()">📱 إرسال للغائبين</button>
+            <button class="btn btn-primary btn-sm" onclick="navigate('attendance')">تسجيل حضور</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table id="todayTable">
+            <thead><tr>
+              <th>الطالب</th><th>الفصل</th><th>الحالة</th><th>الملاحظة</th><th>الإجراءات</th>
+            </tr></thead>
+            <tbody id="todayTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ATTENDANCE ===== -->
+    <div class="page" id="page-attendance">
+      <div class="section-title">تسجيل الحضور والغياب</div>
+      <div class="section-sub">قم بتسجيل حالة كل طالب يومياً</div>
+
+      <div class="filter-row">
+        <select id="attClassFilter" onchange="renderAttendancePage()">
+          <option value="">كل الفصول</option>
+        </select>
+        <input type="date" class="form-control" id="attDate" style="width:auto" onchange="renderAttendancePage()">
+        <button class="btn btn-success" onclick="saveAttendance()">💾 حفظ الحضور</button>
+        <button class="btn btn-outline" onclick="markAllPresent()">✅ تحديد الكل حاضر</button>
+      </div>
+
+      <div class="alert alert-info">
+        <span>ℹ️</span>
+        <div>قم بالنقر على الأزرار لتحديد حالة كل طالب: <strong>حاضر</strong> / <strong>غائب</strong> / <strong>متأخر</strong> / <strong>بعذر</strong></div>
+      </div>
+
+      <div class="attendance-grid" id="attendanceGrid"></div>
+    </div>
+
+    <!-- ===== STUDENTS ===== -->
+    <div class="page" id="page-students">
+      <div class="section-title">إدارة الطلاب</div>
+      <div class="section-sub">عرض وإدارة بيانات جميع الطلاب المسجلين</div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>قائمة الطلاب (<span id="studentTotal">0</span>)</h3>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="search-box">
+              <input type="text" placeholder="ابحث عن طالب..." id="studentSearch" oninput="renderStudentTable()">
+            </div>
+            <select id="classFilter" onchange="renderStudentTable()" style="padding:9px 12px;border-radius:9px;border:1.5px solid var(--border);font-family:inherit;font-size:13px">
+              <option value="">كل الفصول</option>
+            </select>
+            <button class="btn btn-primary" onclick="openAddStudentModal()">+ إضافة طالب</button>
+            <button class="btn btn-excel" onclick="openExcelImport()">📊 استيراد Excel</button>
+            <button class="btn btn-sm" style="background:#f97316;color:#fff;padding:8px 14px" onclick="openBulkWarnPrint()">🖨️ طباعة إنذارات</button>
+          </div>
+        </div>
+        <div style="padding:14px 14px 0" id="studentWarnBanner"></div>
+        <div style="overflow:auto">
+          <table>
+            <thead><tr>
+              <th>#</th><th>اسم الطالب</th><th>الفصل</th><th>رقم ولي الأمر</th><th>إجمالي الغياب</th><th>الحالة</th><th>إجراءات</th>
+            </tr></thead>
+            <tbody id="studentTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CLASSES ===== -->
+    <div class="page" id="page-classes">
+      <div class="section-title">الفصول الدراسية</div>
+      <div class="section-sub">إدارة الفصول والشعب الدراسية</div>
+
+      <div style="display:flex;gap:12px;margin-bottom:20px">
+        <button class="btn btn-primary" onclick="openAddClassModal()">+ إضافة فصل</button>
+      </div>
+
+      <div class="stats-grid" id="classesGrid"></div>
+    </div>
+
+    <!-- ===== REPORTS ===== -->
+    <div class="page" id="page-reports">
+      <div class="section-title">التقارير التفصيلية</div>
+      <div class="section-sub">تقارير الحضور والغياب بصورة يومية وأسبوعية وشهرية</div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchReportTab('daily', this)">📅 يومي</button>
+        <button class="tab-btn" onclick="switchReportTab('weekly', this)">📆 أسبوعي</button>
+        <button class="tab-btn" onclick="switchReportTab('monthly', this)">🗓️ شهري</button>
+        <button class="tab-btn" onclick="switchReportTab('student', this)">👤 تقرير طالب</button>
+      </div>
+
+      <div id="reportContent"></div>
+    </div>
+
+    <!-- ===== ANALYTICS ===== -->
+    <div class="page" id="page-analytics">
+      <div class="section-title">الإحصاءات والتحليل</div>
+      <div class="section-sub">تحليل معدلات الحضور والغياب</div>
+      <div id="analyticsContent"></div>
+    </div>
+
+    <!-- ===== WHATSAPP ===== -->
+    <div class="page" id="page-whatsapp">
+      <div class="section-title">إشعارات الواتساب</div>
+      <div class="section-sub">إرسال رسائل إخطار لأولياء الأمور عبر واتساب</div>
+
+      <div class="wa-card">
+        <h3>📱 نظام إشعارات الواتساب الفوري</h3>
+        <p>أرسل تنبيهات غياب الطلاب مباشرة لأولياء الأمور عبر واتساب بضغطة واحدة</p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+        <div class="card">
+          <div class="card-header"><h3>📝 قالب الرسالة</h3></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">نوع القالب</label>
+              <select class="form-control" id="templateType" onchange="updateTemplate()">
+                <option value="absent">غياب بدون عذر</option>
+                <option value="excuse">غياب بعذر</option>
+                <option value="late">تأخر</option>
+                <option value="warning">تحذير تراكم غياب</option>
+              </select>
+            </div>
+            <div class="wa-template" id="waTemplate"></div>
+            <button class="btn btn-whatsapp" style="margin-top:14px;width:100%" onclick="sendBulkWhatsapp()">
+              📱 إرسال للغائبين اليوم
+            </button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>🎯 الطلاب الغائبون اليوم</h3></div>
+          <div class="card-body" style="padding:0">
+            <table>
+              <thead><tr><th>الطالب</th><th>الحالة</th><th>إرسال</th></tr></thead>
+              <tbody id="waStudentList"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SETTINGS ===== -->
+    <div class="page" id="page-settings">
+      <div class="section-title">إعدادات النظام</div>
+      <div class="section-sub">تخصيص إعدادات نظام الحضور</div>
+      <div class="card" style="max-width:600px">
+        <div class="card-header"><h3>⚙️ الإعدادات العامة</h3></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">اسم المدرسة</label>
+            <input type="text" class="form-control" id="schoolName" value="مدرسة النور الابتدائية">
+          </div>
+          <div class="form-group">
+            <label class="form-label">حد الغياب المسموح (أيام/أسبوع)</label>
+            <input type="number" class="form-control" id="absenceLimit" value="3" min="1" max="10">
+          </div>
+          <div class="form-group">
+            <label class="form-label">حد التأخير المسموح (دقائق)</label>
+            <input type="number" class="form-control" id="lateLimit" value="15" min="5" max="60">
+          </div>
+          <div class="form-group">
+            <label class="form-label">وقت بدء الدراسة</label>
+            <input type="time" class="form-control" id="schoolStart" value="07:30">
+          </div>
+          <div class="form-group">
+            <label class="form-label">رسالة واتساب افتراضية للغياب</label>
+            <textarea class="form-control" rows="4" id="defaultMsg">السلام عليكم ولي أمر الطالب {name}،
+نُعلمكم بأن ابنكم تغيب عن المدرسة اليوم بتاريخ {date}.
+نرجو التواصل مع إدارة المدرسة.
+مع التحية،
+إدارة {school}</textarea>
+          </div>
+          <button class="btn btn-primary" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== WARNING PRINT MODAL ===== -->
+<div class="modal-overlay" id="warnPrintModal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <h3>🖨️ طباعة إنذار غياب</h3>
+      <button class="modal-close" onclick="closeModal('warnPrintModal')">✕</button>
+    </div>
+
+    <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <label class="form-label">مستوى الإنذار</label>
+        <div class="level-selector">
+          <button class="level-btn active-l1" id="lvlBtn1" onclick="setWarnLevel(1)">
+            <div style="font-size:18px">⚠️</div>إنذار أول
+          </button>
+          <button class="level-btn" id="lvlBtn2" onclick="setWarnLevel(2)">
+            <div style="font-size:18px">🔔</div>إنذار ثانٍ
+          </button>
+          <button class="level-btn" id="lvlBtn3" onclick="setWarnLevel(3)">
+            <div style="font-size:18px">🚨</div>إنذار نهائي
+          </button>
+        </div>
+      </div>
+      <div style="flex:1;min-width:180px">
+        <label class="form-label">الجهة الموجَّه إليها</label>
+        <select class="form-control" id="warnTarget" onchange="updatePrintPreview()">
+          <option value="parent">ولي الأمر</option>
+          <option value="student">الطالب</option>
+          <option value="both">ولي الأمر والطالب</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:160px">
+        <label class="form-label">التاريخ</label>
+        <input type="date" class="form-control" id="warnDate" onchange="updatePrintPreview()">
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label class="form-label">ملاحظات إضافية (اختياري)</label>
+      <textarea class="form-control" rows="2" id="warnNotes" placeholder="يمكن إضافة ملاحظة خاصة..." oninput="updatePrintPreview()"></textarea>
+    </div>
+
+    <!-- PREVIEW -->
+    <div id="printArea">
+      <div class="print-preview" id="printPreview">
+        <div class="pp-watermark">إنذار</div>
+        <!-- Content generated by JS -->
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-outline" onclick="closeModal('warnPrintModal')">إلغاء</button>
+      <button class="btn btn-whatsapp" onclick="sendWarnWhatsapp()">📱 إرسال واتساب</button>
+      <button class="btn btn-primary" onclick="doPrint()">🖨️ طباعة الإنذار</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EXCEL IMPORT MODAL ===== -->
+<div class="modal-overlay" id="excelImportModal">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-header">
+      <h3>📊 استيراد الطلاب من ملف Excel</h3>
+      <button class="modal-close" onclick="closeModal('excelImportModal');resetImport()">✕</button>
+    </div>
+
+    <!-- Steps -->
+    <div class="import-steps" id="importSteps">
+      <div class="import-step active" id="step1El"><div class="step-num">1</div><div class="step-label">رفع الملف</div></div>
+      <div class="import-step" id="step2El"><div class="step-num">2</div><div class="step-label">تعيين الأعمدة</div></div>
+      <div class="import-step" id="step3El"><div class="step-num">3</div><div class="step-label">مراجعة البيانات</div></div>
+      <div class="import-step" id="step4El"><div class="step-num">4</div><div class="step-label">الاستيراد</div></div>
+    </div>
+
+    <!-- STEP 1: Upload -->
+    <div id="importStep1">
+      <div class="excel-drop-zone" id="dropZone"
+        onclick="document.getElementById('excelFileInput').click()"
+        ondragover="handleDragOver(event)"
+        ondragleave="handleDragLeave(event)"
+        ondrop="handleDrop(event)">
+        <span class="dz-icon">📗</span>
+        <h4>اسحب ملف Excel هنا أو انقر للاختيار</h4>
+        <p>يدعم النظام ملفات Excel بكافة إصداراتها</p>
+        <div class="dz-formats">
+          <span class="dz-format-badge">.xlsx</span>
+          <span class="dz-format-badge">.xls</span>
+          <span class="dz-format-badge">.csv</span>
+        </div>
+      </div>
+      <input type="file" id="excelFileInput" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(event)">
+
+      <div style="margin-top:18px;padding:16px;background:var(--bg);border-radius:12px;border:1.5px solid var(--border)">
+        <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:12px">📋 تنسيق الملف المطلوب</div>
+        <p style="font-size:12px;color:var(--text-light);margin-bottom:10px">يجب أن يحتوي الملف على أعمدة تشمل على الأقل: <strong>اسم الطالب</strong> و <strong>رقم الطالب</strong>. بقية الأعمدة اختيارية.</p>
+        <div style="overflow:auto">
+          <table style="min-width:500px;font-size:12px">
+            <thead><tr style="background:var(--primary);color:#fff">
+              <th style="padding:8px 12px;text-align:right">اسم الطالب</th>
+              <th style="padding:8px 12px;text-align:right">رقم الطالب</th>
+              <th style="padding:8px 12px;text-align:right">الفصل</th>
+              <th style="padding:8px 12px;text-align:right">الجنس</th>
+              <th style="padding:8px 12px;text-align:right">ولي الأمر</th>
+              <th style="padding:8px 12px;text-align:right">رقم الجوال</th>
+            </tr></thead>
+            <tbody>
+              <tr style="background:#fff"><td style="padding:7px 12px">أحمد محمد علي</td><td>2025001</td><td>الصف الأول أ</td><td>ذكر</td><td>محمد علي</td><td>966501234567</td></tr>
+              <tr style="background:var(--bg)"><td style="padding:7px 12px">سارة عبدالله</td><td>2025002</td><td>الصف الأول ب</td><td>أنثى</td><td>عبدالله كريم</td><td>966502345678</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <button class="sample-btn" onclick="downloadSampleExcel()">⬇️ تحميل ملف نموذج</button>
+          <span style="font-size:12px;color:var(--text-light)">أو يمكنك تحميل ملف نموذج جاهز وملؤه ببيانات طلابك</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Column Mapping -->
+    <div id="importStep2" style="display:none">
+      <div style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:15px;font-weight:700;color:var(--primary)" id="fileNameDisplay"></div>
+            <div style="font-size:12px;color:var(--text-light)" id="sheetInfo"></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="font-size:13px;font-weight:600">الورقة:</label>
+            <select class="form-control" id="sheetSelect" onchange="loadSheet()" style="width:auto;padding:7px 12px"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-mapper">
+        <h4>🔗 ربط الأعمدة بحقول النظام</h4>
+        <div class="col-mapper-grid">
+          <div class="col-mapper-item">
+            <label><span class="required-star">*</span> عمود اسم الطالب</label>
+            <select class="form-control" id="mapName"></select>
+          </div>
+          <div class="col-mapper-item">
+            <label><span class="required-star">*</span> عمود رقم الطالب</label>
+            <select class="form-control" id="mapStudentId"></select>
+          </div>
+          <div class="col-mapper-item">
+            <label>عمود الفصل الدراسي</label>
+            <select class="form-control" id="mapClass"></select>
+          </div>
+          <div class="col-mapper-item">
+            <label>عمود الجنس</label>
+            <select class="form-control" id="mapGender"></select>
+          </div>
+          <div class="col-mapper-item">
+            <label>عمود ولي الأمر</label>
+            <select class="form-control" id="mapParent"></select>
+          </div>
+          <div class="col-mapper-item">
+            <label>عمود رقم الجوال</label>
+            <select class="form-control" id="mapPhone"></select>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <label class="form-label">الفصل الافتراضي (للطلاب بدون فصل محدد)</label>
+          <select class="form-control" id="defaultClassForImport" style="max-width:260px">
+            <option value="">-- اختر فصلاً --</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-top:14px">
+        <input type="checkbox" id="skipDuplicates" checked style="width:16px;height:16px;accent-color:var(--secondary)">
+        <label for="skipDuplicates" style="font-size:13px;font-weight:600;cursor:pointer">تخطي الطلاب المكررين (نفس رقم الطالب)</label>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+        <input type="checkbox" id="skipHeader" checked style="width:16px;height:16px;accent-color:var(--secondary)">
+        <label for="skipHeader" style="font-size:13px;font-weight:600;cursor:pointer">تخطي الصف الأول (رأس الجدول)</label>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+        <button class="btn btn-outline" onclick="goImportStep(1)">← رجوع</button>
+        <button class="btn btn-primary" onclick="previewImport()">👁️ معاينة البيانات ←</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Preview -->
+    <div id="importStep3" style="display:none">
+      <div class="import-summary" id="importSummary"></div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap">
+        <div style="font-size:13px;font-weight:700;color:var(--primary)">معاينة البيانات:</div>
+        <div style="display:flex;gap:8px;font-size:12px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:4px"><span class="row-status-dot dot-ok"></span> سيتم استيراده</span>
+          <span style="display:flex;align-items:center;gap:4px"><span class="row-status-dot dot-dup"></span> مكرر (سيُتخطى)</span>
+          <span style="display:flex;align-items:center;gap:4px"><span class="row-status-dot dot-err"></span> بيانات ناقصة</span>
+        </div>
+        <div style="margin-right:auto;display:flex;gap:6px">
+          <button class="btn btn-outline btn-sm" onclick="filterPreview('all')" id="filterAll">الكل</button>
+          <button class="btn btn-outline btn-sm" onclick="filterPreview('ok')" id="filterOk">✅ صالح</button>
+          <button class="btn btn-outline btn-sm" onclick="filterPreview('dup')" id="filterDup">🟡 مكرر</button>
+          <button class="btn btn-outline btn-sm" onclick="filterPreview('err')" id="filterErr">❌ خطأ</button>
+        </div>
+      </div>
+
+      <div class="preview-wrap" id="previewWrap"></div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+        <button class="btn btn-outline" onclick="goImportStep(2)">← رجوع</button>
+        <button class="btn btn-success" onclick="doImport()" id="importConfirmBtn">✅ استيراد الطلاب</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Done -->
+    <div id="importStep4" style="display:none;text-align:center;padding:20px 0">
+      <div style="font-size:70px;margin-bottom:16px">🎉</div>
+      <h3 style="font-size:22px;font-weight:900;color:var(--primary);margin-bottom:8px">تم الاستيراد بنجاح!</h3>
+      <p style="font-size:14px;color:var(--text-light);margin-bottom:20px" id="importDoneMsg"></p>
+      <div class="import-summary" id="importDoneSummary" style="justify-content:center"></div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:24px">
+        <button class="btn btn-outline" onclick="resetImport();closeModal('excelImportModal')">إغلاق</button>
+        <button class="btn btn-primary" onclick="resetImport()">📊 استيراد ملف آخر</button>
+        <button class="btn btn-success" onclick="navigate('students');closeModal('excelImportModal')">👨‍🎓 عرض الطلاب</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== MODALS ===== -->
+<div class="modal-overlay" id="addStudentModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="studentModalTitle">إضافة طالب جديد</h3>
+      <button class="modal-close" onclick="closeModal('addStudentModal')">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">اسم الطالب *</label>
+        <input type="text" class="form-control" id="sName" placeholder="الاسم الرباعي">
+      </div>
+      <div class="form-group">
+        <label class="form-label">رقم الطالب</label>
+        <input type="text" class="form-control" id="sId" placeholder="مثال: 2025001">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">الفصل الدراسي *</label>
+        <select class="form-control" id="sClass">
+          <option value="">اختر الفصل</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">الجنس</label>
+        <select class="form-control" id="sGender">
+          <option value="ذكر">ذكر</option>
+          <option value="أنثى">أنثى</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">اسم ولي الأمر</label>
+        <input type="text" class="form-control" id="sParent" placeholder="اسم ولي الأمر">
+      </div>
+      <div class="form-group">
+        <label class="form-label">رقم الواتساب *</label>
+        <input type="tel" class="form-control" id="sPhone" placeholder="966xxxxxxxxx">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-outline" onclick="closeModal('addStudentModal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveStudent()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addClassModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>إضافة فصل دراسي</h3>
+      <button class="modal-close" onclick="closeModal('addClassModal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">اسم الفصل *</label>
+      <input type="text" class="form-control" id="cName" placeholder="مثال: الصف الأول أ">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">المرحلة الدراسية</label>
+        <select class="form-control" id="cLevel">
+          <option>الأول</option><option>الثاني</option><option>الثالث</option>
+          <option>الرابع</option><option>الخامس</option><option>السادس</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">معلم الفصل</label>
+        <input type="text" class="form-control" id="cTeacher" placeholder="اسم المعلم/ة">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button class="btn btn-outline" onclick="closeModal('addClassModal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveClass()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ==================== DATABASE ====================
+let DB = {
+  classes: [
+    { id: 'c1', name: 'الصف الأول أ', level: 'الأول', teacher: 'أ. محمد أحمد' },
+    { id: 'c2', name: 'الصف الأول ب', level: 'الأول', teacher: 'أ. سارة علي' },
+    { id: 'c3', name: 'الصف الثاني أ', level: 'الثاني', teacher: 'أ. عمر حسن' },
+    { id: 'c4', name: 'الصف الثالث أ', level: 'الثالث', teacher: 'أ. فاطمة محمود' },
+  ],
+  students: [
+    { id: 's1', name: 'أحمد عبدالله الشمري', studentId: '2025001', classId: 'c1', gender: 'ذكر', parent: 'عبدالله الشمري', phone: '966501234567' },
+    { id: 's2', name: 'سلمى يوسف الحربي', studentId: '2025002', classId: 'c1', gender: 'أنثى', parent: 'يوسف الحربي', phone: '966502345678' },
+    { id: 's3', name: 'محمد فهد القحطاني', studentId: '2025003', classId: 'c1', gender: 'ذكر', parent: 'فهد القحطاني', phone: '966503456789' },
+    { id: 's4', name: 'نورة سعد العتيبي', studentId: '2025004', classId: 'c2', gender: 'أنثى', parent: 'سعد العتيبي', phone: '966504567890' },
+    { id: 's5', name: 'عبدالرحمن خالد الدوسري', studentId: '2025005', classId: 'c2', gender: 'ذكر', parent: 'خالد الدوسري', phone: '966505678901' },
+    { id: 's6', name: 'ريم عمر الزهراني', studentId: '2025006', classId: 'c3', gender: 'أنثى', parent: 'عمر الزهراني', phone: '966506789012' },
+    { id: 's7', name: 'يوسف أحمد الغامدي', studentId: '2025007', classId: 'c3', gender: 'ذكر', parent: 'أحمد الغامدي', phone: '966507890123' },
+    { id: 's8', name: 'هند محمد السلمي', studentId: '2025008', classId: 'c4', gender: 'أنثى', parent: 'محمد السلمي', phone: '966508901234' },
+    { id: 's9', name: 'بدر علي المطيري', studentId: '2025009', classId: 'c4', gender: 'ذكر', parent: 'علي المطيري', phone: '966509012345' },
+    { id: 's10', name: 'لمى حسن الشهري', studentId: '2025010', classId: 'c1', gender: 'أنثى', parent: 'حسن الشهري', phone: '966500123456' },
+  ],
+  attendance: {},
+  settings: {
+    schoolName: 'مدرسة النور الابتدائية',
+    absenceLimit: 3,
+    lateLimit: 15,
+    schoolStart: '07:30',
+    defaultMsg: 'السلام عليكم ولي أمر الطالب {name}،\nنُعلمكم بأن ابنكم تغيب عن المدرسة اليوم بتاريخ {date}.\nنرجو التواصل مع إدارة المدرسة.\nمع التحية،\nإدارة {school}'
+  }
+};
+
+// Load from localStorage
+function loadDB() {
+  const saved = localStorage.getItem('attendanceDB');
+  if (saved) DB = JSON.parse(saved);
+}
+function saveDB() {
+  localStorage.setItem('attendanceDB', JSON.stringify(DB));
+}
+
+// ==================== HELPERS ====================
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+function formatDate(d) {
+  const dt = new Date(d);
+  return dt.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+function getClass(id) { return DB.classes.find(c => c.id === id) || {}; }
+function getStudent(id) { return DB.students.find(s => s.id === id) || {}; }
+
+function getAttendance(studentId, date) {
+  return (DB.attendance[date] || {})[studentId] || { status: 'unset', note: '' };
+}
+function setAttendance(studentId, date, status, note = '') {
+  if (!DB.attendance[date]) DB.attendance[date] = {};
+  DB.attendance[date][studentId] = { status, note };
+  saveDB();
+}
+
+function studentAbsenceCount(studentId) {
+  let count = 0;
+  Object.values(DB.attendance).forEach(dayData => {
+    const att = dayData[studentId];
+    if (att && (att.status === 'absent' || att.status === 'excuse')) count++;
+  });
+  return count;
+}
+
+const AVATAR_COLORS = ['colors-1','colors-2','colors-3','colors-4','colors-5','colors-6','colors-7','colors-8'];
+function avatarColor(name) {
+  let hash = 0;
+  for (let c of name) hash = c.charCodeAt(0) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+function initials(name) {
+  const parts = name.trim().split(' ');
+  return parts.length >= 2 ? parts[0][0] + parts[1][0] : parts[0].slice(0,2);
+}
+
+function statusBadge(status) {
+  const map = {
+    present: ['badge-success','✅','حاضر'],
+    absent:  ['badge-danger','❌','غائب'],
+    late:    ['badge-orange','⏰','متأخر'],
+    excuse:  ['badge-purple','📄','بعذر'],
+    unset:   ['badge-blue','⬜','لم يُسجل'],
+  };
+  const [cls, icon, label] = map[status] || map.unset;
+  return `<span class="badge ${cls}">${icon} ${label}</span>`;
+}
+
+function getTodayStats() {
+  const d = today();
+  const att = DB.attendance[d] || {};
+  let present=0, absent=0, late=0, excuse=0;
+  DB.students.forEach(s => {
+    const a = att[s.id];
+    if (!a) return;
+    if (a.status === 'present') present++;
+    else if (a.status === 'absent') absent++;
+    else if (a.status === 'late') late++;
+    else if (a.status === 'excuse') excuse++;
+  });
+  return { total: DB.students.length, present, absent, late, excuse };
+}
+
+// ==================== NAVIGATION ====================
+const pageTitles = {
+  dashboard: 'لوحة التحكم',
+  attendance: 'تسجيل الحضور والغياب',
+  students: 'إدارة الطلاب',
+  classes: 'الفصول الدراسية',
+  reports: 'التقارير التفصيلية',
+  analytics: 'الإحصاءات والتحليل',
+  whatsapp: 'إشعارات الواتساب',
+  settings: 'إعدادات النظام',
+};
+
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes("'"+page+"'")) n.classList.add('active');
+  });
+  document.getElementById('pageTitle').textContent = pageTitles[page];
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'attendance') renderAttendancePage();
+  if (page === 'students') renderStudentTable();
+  if (page === 'classes') renderClasses();
+  if (page === 'reports') renderReports();
+  if (page === 'analytics') renderAnalytics();
+  if (page === 'whatsapp') renderWhatsapp();
+  if (page === 'settings') loadSettings();
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const d = today();
+  document.getElementById('currentDate').textContent = formatDate(d);
+  document.getElementById('dashSubtitle').textContent = `اليوم: ${formatDate(d)} | ${DB.settings.schoolName}`;
+
+  // ---- Warning banner on dashboard ----
+  const warnStudents = getDashboardWarnings();
+  const critStudents = DB.students.filter(s => studentAbsenceCount(s.id) >= DB.settings.absenceLimit * 2);
+  let dashWarnHtml = '';
+  if (critStudents.length > 0) {
+    dashWarnHtml = `<div class="warning-banner critical-banner">
+      <div class="wb-icon">🚨</div>
+      <div style="flex:1">
+        <h4>طلاب في وضع حرج — تجاوزوا ضعف الحد المسموح!</h4>
+        <p>${critStudents.slice(0,4).map(s=>`<strong>${s.name}</strong> (${studentAbsenceCount(s.id)} يوم)`).join(' • ')}${critStudents.length>4?` و ${critStudents.length-4} آخرون`:''}</p>
+      </div>
+      <div class="wb-count">${critStudents.length}</div>
+      <button class="btn btn-sm" style="background:#ef4444;color:#fff;flex-shrink:0" onclick="navigate('students')">عرض الكل</button>
+    </div>`;
+  } else if (warnStudents.length > 0) {
+    dashWarnHtml = `<div class="warning-banner">
+      <div class="wb-icon">⚠️</div>
+      <div style="flex:1">
+        <h4>طلاب وصلوا لحد الغياب المسموح (${DB.settings.absenceLimit} أيام)</h4>
+        <p>${warnStudents.slice(0,4).map(s=>`<strong>${s.name}</strong> (${studentAbsenceCount(s.id)} يوم)`).join(' • ')}${warnStudents.length>4?` و ${warnStudents.length-4} آخرون`:''}</p>
+      </div>
+      <div class="wb-count">${warnStudents.length}</div>
+      <button class="btn btn-sm" style="background:#f97316;color:#fff;flex-shrink:0" onclick="navigate('students')">عرض الكل</button>
+    </div>`;
+  }
+  // Add banner container after subtitle if not exists
+  let bannerContainer = document.getElementById('dashWarnBanner');
+  if (!bannerContainer) {
+    bannerContainer = document.createElement('div');
+    bannerContainer.id = 'dashWarnBanner';
+    const subtitle = document.getElementById('dashSubtitle');
+    subtitle.parentNode.insertBefore(bannerContainer, subtitle.nextSibling);
+  }
+  bannerContainer.innerHTML = dashWarnHtml;
+
+  const stats = getTodayStats();
+  document.getElementById('totalCount').textContent = stats.total;
+  document.getElementById('presentCount').textContent = stats.present;
+  document.getElementById('absentCount').textContent = stats.absent;
+  document.getElementById('lateCount').textContent = stats.late;
+  document.getElementById('excuseCount').textContent = stats.excuse;
+
+  // Week chart
+  const days = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس'];
+  const weekHtml = days.map((day, i) => {
+    const dt = new Date();
+    dt.setDate(dt.getDate() - dt.getDay() + i);
+    const dateStr = dt.toISOString().slice(0,10);
+    const att = DB.attendance[dateStr] || {};
+    let absent = 0;
+    DB.students.forEach(s => {
+      const a = att[s.id];
+      if (a && (a.status === 'absent' || a.status === 'excuse')) absent++;
+    });
+    const pct = DB.students.length ? Math.round(absent/DB.students.length*100) : 0;
+    return `<div class="chart-bar-row">
+      <div class="chart-bar-label">${day}</div>
+      <div class="chart-bar-bg">
+        <div class="chart-bar-fill" style="width:${pct}%;background:var(--danger)">
+          <span class="chart-bar-val">${absent}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('weekChart').innerHTML = weekHtml || '<div class="empty-state"><p>لا توجد بيانات</p></div>';
+
+  // Top absent students
+  const topList = [...DB.students].map(s => ({...s, count: studentAbsenceCount(s.id)}))
+    .sort((a,b)=>b.count-a.count).slice(0,5);
+  document.getElementById('topAbsent').innerHTML = topList.map(s => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div class="student-avatar ${avatarColor(s.name)}" style="width:36px;height:36px;font-size:13px">${initials(s.name)}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600">${s.name}</div>
+      <div style="font-size:11px;color:var(--text-light)">${getClass(s.classId).name||''}</div></div>
+      <span class="badge badge-danger">${s.count} يوم</span>
+    </div>
+  `).join('') || '<div class="empty-state"><div class="es-icon">🎉</div><p>لا يوجد غياب مسجل</p></div>';
+
+  // Today table
+  const att = DB.attendance[d] || {};
+  const limit = DB.settings.absenceLimit;
+  const rows = DB.students.map(s => {
+    const a = att[s.id] || { status: 'unset', note: '' };
+    const absCount = studentAbsenceCount(s.id);
+    const isCritical = absCount >= limit * 2;
+    const isWarning = absCount >= limit;
+    const warnIcon = isCritical ? '🚨' : isWarning ? '⚠️' : '';
+    return `<tr>
+      <td><div class="student-info">
+        <div class="student-avatar ${avatarColor(s.name)}" style="width:32px;height:32px;font-size:12px">${initials(s.name)}</div>
+        <div><div class="student-name">${warnIcon?`<span style="margin-left:4px">${warnIcon}</span>`:''}${s.name}</div><div class="student-id">${s.studentId}</div></div>
+      </div></td>
+      <td>${getClass(s.classId).name||'-'}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td><span style="font-size:12px;color:var(--text-light)">${a.note||'-'}</span></td>
+      <td style="white-space:nowrap">
+        ${(a.status === 'absent' || a.status === 'excuse') ? 
+          `<button class="btn btn-whatsapp btn-sm" onclick="sendWhatsapp('${s.id}')">📱 إبلاغ</button>` : ''}
+        ${isWarning ? `<button class="btn btn-sm" style="background:#f97316;color:#fff" onclick="openWarnPrint('${s.id}')">🖨️</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('todayTbody').innerHTML = rows || '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-light)">لم يتم تسجيل الحضور بعد</td></tr>';
+
+  // Update pending badge
+  const unset = DB.students.filter(s => !(DB.attendance[d]||{})[s.id]).length;
+  document.getElementById('pendingBadge').textContent = unset;
+}
+
+// ==================== ATTENDANCE PAGE ====================
+function renderAttendancePage() {
+  const dateInput = document.getElementById('attDate');
+  if (!dateInput.value) dateInput.value = today();
+  const selectedDate = dateInput.value;
+  const classFilter = document.getElementById('attClassFilter').value;
+
+  // Populate class filter
+  const cf = document.getElementById('attClassFilter');
+  if (cf.options.length <= 1) {
+    DB.classes.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name;
+      cf.appendChild(opt);
+    });
+  }
+
+  const students = classFilter ? DB.students.filter(s => s.classId === classFilter) : DB.students;
+  
+  document.getElementById('attendanceGrid').innerHTML = students.map(s => {
+    const a = getAttendance(s.id, selectedDate);
+    const status = a.status;
+    return `<div class="attendance-card ${status !== 'unset' ? 'status-'+status : ''}" id="attcard-${s.id}">
+      <div class="att-student">
+        <div class="student-avatar ${avatarColor(s.name)}" style="width:44px;height:44px;font-size:16px">${initials(s.name)}</div>
+        <div class="att-student-info">
+          <h4>${s.name}</h4>
+          <p>${s.studentId} | ${getClass(s.classId).name||''}</p>
+        </div>
+      </div>
+      <div class="status-btns">
+        <button class="status-btn ${status==='present'?'active-present':''}" onclick="setStatus('${s.id}','present')">
+          <span class="s-icon">✅</span><span>حاضر</span>
+        </button>
+        <button class="status-btn ${status==='absent'?'active-absent':''}" onclick="setStatus('${s.id}','absent')">
+          <span class="s-icon">❌</span><span>غائب</span>
+        </button>
+        <button class="status-btn ${status==='late'?'active-late':''}" onclick="setStatus('${s.id}','late')">
+          <span class="s-icon">⏰</span><span>متأخر</span>
+        </button>
+        <button class="status-btn ${status==='excuse'?'active-excuse':''}" onclick="setStatus('${s.id}','excuse')">
+          <span class="s-icon">📄</span><span>بعذر</span>
+        </button>
+      </div>
+      <textarea class="note-input" rows="1" placeholder="ملاحظة (اختياري)..." id="note-${s.id}">${a.note||''}</textarea>
+    </div>`;
+  }).join('') || '<div class="empty-state"><div class="es-icon">👨‍🎓</div><h3>لا يوجد طلاب</h3></div>';
+}
+
+function setStatus(studentId, status) {
+  const dateInput = document.getElementById('attDate');
+  const d = dateInput.value || today();
+  const note = document.getElementById('note-'+studentId)?.value || '';
+  setAttendance(studentId, d, status, note);
+  
+  const card = document.getElementById('attcard-'+studentId);
+  card.className = 'attendance-card status-'+status;
+  card.querySelectorAll('.status-btn').forEach(btn => {
+    btn.className = 'status-btn';
+    if (btn.querySelector('.s-icon').textContent === {'present':'✅','absent':'❌','late':'⏰','excuse':'📄'}[status]) {
+      btn.classList.add('active-'+status);
+    }
+  });
+  showToast('تم تسجيل الحالة', '✅');
+  updatePendingBadge();
+}
+
+function updatePendingBadge() {
+  const d = today();
+  const unset = DB.students.filter(s => !(DB.attendance[d]||{})[s.id]).length;
+  document.getElementById('pendingBadge').textContent = unset;
+}
+
+function saveAttendance() {
+  const d = document.getElementById('attDate').value || today();
+  DB.students.forEach(s => {
+    const note = document.getElementById('note-'+s.id)?.value || '';
+    const att = getAttendance(s.id, d);
+    if (att.status !== 'unset') {
+      setAttendance(s.id, d, att.status, note);
+    }
+  });
+  showToast('تم حفظ بيانات الحضور بنجاح', '💾');
+}
+
+function markAllPresent() {
+  const d = document.getElementById('attDate').value || today();
+  DB.students.forEach(s => setAttendance(s.id, d, 'present', ''));
+  renderAttendancePage();
+  showToast('تم تحديد جميع الطلاب حاضرين', '✅');
+}
+
+// ==================== STUDENTS ====================
+function renderStudentTable() {
+  // Populate class filter
+  const cf = document.getElementById('classFilter');
+  if (cf.options.length <= 1) {
+    DB.classes.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name; cf.appendChild(opt);
+    });
+  }
+  // Populate select in modal
+  const sc = document.getElementById('sClass');
+  if (sc.options.length <= 1) {
+    DB.classes.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name; sc.appendChild(opt);
+    });
+  }
+
+  const search = document.getElementById('studentSearch').value.toLowerCase();
+  const classF = document.getElementById('classFilter').value;
+  let filtered = DB.students.filter(s => {
+    const matchSearch = s.name.toLowerCase().includes(search) || s.studentId.includes(search);
+    const matchClass = classF ? s.classId === classF : true;
+    return matchSearch && matchClass;
+  });
+
+  document.getElementById('studentTotal').textContent = filtered.length;
+
+  // Warning counts for header
+  const warnStudents = filtered.filter(s => {
+    const c = studentAbsenceCount(s.id);
+    return c >= DB.settings.absenceLimit;
+  });
+  const critStudents = filtered.filter(s => {
+    const c = studentAbsenceCount(s.id);
+    return c >= DB.settings.absenceLimit * 2;
+  });
+
+  // Show warning summary banner above table if needed
+  let warnBanner = '';
+  if (critStudents.length > 0) {
+    warnBanner = `<div class="warning-banner critical-banner" style="margin:0 0 14px">
+      <div class="wb-icon">🚨</div>
+      <div><h4>تحذير عاجل — طلاب تجاوزوا الحد الحرج</h4>
+      <p>${critStudents.map(s=>s.name).join(' | ')}</p></div>
+      <div class="wb-count">${critStudents.length}</div>
+    </div>`;
+  } else if (warnStudents.length > 0) {
+    warnBanner = `<div class="warning-banner" style="margin:0 0 14px">
+      <div class="wb-icon">⚠️</div>
+      <div><h4>تنبيه — طلاب وصلوا لحد الغياب المسموح</h4>
+      <p>${warnStudents.map(s=>s.name).join(' | ')}</p></div>
+      <div class="wb-count">${warnStudents.length}</div>
+    </div>`;
+  }
+
+  // Inject banner before table
+  const bannerEl = document.getElementById('studentWarnBanner');
+  if (bannerEl) bannerEl.innerHTML = warnBanner;
+
+  document.getElementById('studentTbody').innerHTML = filtered.map((s, i) => {
+    const absCount = studentAbsenceCount(s.id);
+    const limit = DB.settings.absenceLimit;
+    const isCritical = absCount >= limit * 2;
+    const isWarning = absCount >= limit;
+    const rowClass = isCritical ? 'critical-row' : isWarning ? 'warn-row' : '';
+
+    // Warning badge next to name
+    let warnBadge = '';
+    if (isCritical) {
+      warnBadge = `<span class="warn-indicator" title="تجاوز الحد الحرج">
+        🚨<span class="warn-tooltip">غياب حرج! ${absCount} أيام (الحد: ${limit})</span></span>`;
+    } else if (isWarning) {
+      warnBadge = `<span class="warn-indicator" title="وصل لحد الغياب">
+        ⚠️<span class="warn-tooltip">وصل لحد الغياب المسموح (${absCount}/${limit} أيام)</span></span>`;
+    }
+
+    // Absence badge color
+    let absBadge = '';
+    if (isCritical) absBadge = `<span class="warn-pulse critical">🚨 ${absCount} يوم</span>`;
+    else if (isWarning) absBadge = `<span class="warn-pulse">⚠️ ${absCount} يوم</span>`;
+    else absBadge = `<span class="badge badge-${absCount > 0 ? 'warning' : 'success'}">${absCount} يوم</span>`;
+
+    // Status badge
+    let statusBadge = '';
+    if (isCritical) statusBadge = '<span class="badge badge-danger">🚨 حرج</span>';
+    else if (isWarning) statusBadge = '<span class="badge badge-orange">⚠️ تجاوز الحد</span>';
+    else statusBadge = '<span class="badge badge-success">✅ طبيعي</span>';
+
+    return `<tr class="${rowClass}">
+      <td style="font-size:13px;color:var(--text-light)">${i+1}</td>
+      <td><div class="student-info">
+        <div class="student-avatar ${avatarColor(s.name)}" style="width:34px;height:34px;font-size:12px">${initials(s.name)}</div>
+        <div>
+          <div class="student-name" style="display:flex;align-items:center;gap:4px">
+            ${warnBadge}${s.name}
+          </div>
+          <div class="student-id">${s.studentId}</div>
+        </div>
+      </div></td>
+      <td>${getClass(s.classId).name||'-'}</td>
+      <td><a href="https://wa.me/${s.phone}" target="_blank" style="color:var(--success);font-size:13px">📱 ${s.phone}</a></td>
+      <td>${absBadge}</td>
+      <td>${statusBadge}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑️</button>
+        <button class="btn btn-whatsapp btn-sm" onclick="sendWhatsapp('${s.id}')">📱</button>
+        ${isWarning ? `<button class="btn btn-sm" style="background:#f97316;color:#fff" onclick="openWarnPrint('${s.id}')">🖨️ إنذار</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7"><div class="empty-state"><div class="es-icon">👨‍🎓</div><h3>لا يوجد طلاب</h3></div></td></tr>';
+}
+
+// ==================== CLASSES ====================
+function renderClasses() {
+  document.getElementById('classesGrid').innerHTML = DB.classes.map(c => {
+    const count = DB.students.filter(s => s.classId === c.id).length;
+    const att = DB.attendance[today()] || {};
+    let present = 0;
+    DB.students.filter(s => s.classId === c.id).forEach(s => {
+      if ((att[s.id]||{}).status === 'present') present++;
+    });
+    return `<div class="stat-card">
+      <div class="stat-icon blue" style="font-size:28px">🏛️</div>
+      <div class="stat-info" style="flex:1">
+        <h3 style="font-size:18px">${c.name}</h3>
+        <p>${c.teacher || 'غير محدد'}</p>
+        <div style="margin-top:10px;display:flex;gap:10px">
+          <span class="badge badge-blue">👥 ${count} طالب</span>
+          <span class="badge badge-success">✅ ${present} حاضر</span>
+        </div>
+      </div>
+      <div>
+        <button class="btn btn-danger btn-sm" onclick="deleteClass('${c.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('') || '<div class="empty-state"><div class="es-icon">🏛️</div><h3>لا يوجد فصول</h3></div>';
+}
+
+// ==================== REPORTS ====================
+let currentReportTab = 'daily';
+
+function switchReportTab(tab, el) {
+  currentReportTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderReports();
+}
+
+function renderReports() {
+  const c = document.getElementById('reportContent');
+  if (currentReportTab === 'daily') {
+    const d = today();
+    const att = DB.attendance[d] || {};
+    const rows = DB.students.map(s => {
+      const a = att[s.id] || { status: 'unset', note: '' };
+      return `<tr>
+        <td><div class="student-info">
+          <div class="student-avatar ${avatarColor(s.name)}" style="width:30px;height:30px;font-size:11px">${initials(s.name)}</div>
+          <span style="margin-right:8px">${s.name}</span>
+        </div></td>
+        <td>${getClass(s.classId).name||'-'}</td>
+        <td>${statusBadge(a.status)}</td>
+        <td><span style="font-size:12px;color:var(--text-light)">${a.note||'-'}</span></td>
+      </tr>`;
+    }).join('');
+    const stats = getTodayStats();
+    c.innerHTML = `
+      <div class="report-header">
+        <div class="rh-icon">📅</div>
+        <div>
+          <h2>التقرير اليومي</h2>
+          <p>${formatDate(d)}</p>
+        </div>
+        <div style="margin-right:auto;display:flex;gap:12px;flex-wrap:wrap">
+          <span class="badge badge-success" style="font-size:13px;padding:6px 14px">✅ حاضر: ${stats.present}</span>
+          <span class="badge badge-danger" style="font-size:13px;padding:6px 14px">❌ غائب: ${stats.absent}</span>
+          <span class="badge badge-orange" style="font-size:13px;padding:6px 14px">⏰ متأخر: ${stats.late}</span>
+          <span class="badge badge-purple" style="font-size:13px;padding:6px 14px">📄 بعذر: ${stats.excuse}</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>تفاصيل الحضور</h3>
+          <button class="btn btn-outline btn-sm" onclick="printReport()">🖨️ طباعة</button>
+        </div>
+        <div style="overflow:auto">
+          <table><thead><tr><th>الطالب</th><th>الفصل</th><th>الحالة</th><th>الملاحظة</th></tr></thead>
+          <tbody>${rows}</tbody></table>
+        </div>
+      </div>`;
+  } else if (currentReportTab === 'weekly') {
+    const days = [];
+    for (let i=0; i<7; i++) {
+      const dt = new Date(); dt.setDate(dt.getDate()-i);
+      days.unshift(dt.toISOString().slice(0,10));
+    }
+    const rows = DB.students.map(s => {
+      const cells = days.map(d => {
+        const a = (DB.attendance[d]||{})[s.id];
+        if (!a) return '<td style="text-align:center;color:var(--text-light);font-size:18px">-</td>';
+        const icons = {present:'✅',absent:'❌',late:'⏰',excuse:'📄',unset:'-'};
+        return `<td style="text-align:center">${icons[a.status]||'-'}</td>`;
+      }).join('');
+      return `<tr><td><div class="student-info">
+        <div class="student-avatar ${avatarColor(s.name)}" style="width:28px;height:28px;font-size:10px">${initials(s.name)}</div>
+        <span style="margin-right:6px;font-size:13px">${s.name}</span></div></td>${cells}</tr>`;
+    }).join('');
+    const headers = days.map(d => {
+      const dt = new Date(d);
+      return `<th style="text-align:center">${dt.toLocaleDateString('ar-SA',{weekday:'short',month:'short',day:'numeric'})}</th>`;
+    }).join('');
+    c.innerHTML = `
+      <div class="report-header">
+        <div class="rh-icon">📆</div>
+        <div><h2>التقرير الأسبوعي</h2><p>آخر 7 أيام</p></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>جدول الحضور الأسبوعي</h3>
+          <div style="font-size:12px;color:var(--text-light)">✅ حاضر | ❌ غائب | ⏰ متأخر | 📄 بعذر</div>
+        </div>
+        <div style="overflow:auto">
+          <table><thead><tr><th>الطالب</th>${headers}</tr></thead><tbody>${rows}</tbody></table>
+        </div>
+      </div>`;
+  } else if (currentReportTab === 'monthly') {
+    const now = new Date();
+    const monthDates = [];
+    for (let i=1; i<=now.getDate(); i++) {
+      monthDates.push(new Date(now.getFullYear(), now.getMonth(), i).toISOString().slice(0,10));
+    }
+    const rows = DB.students.map(s => {
+      let present=0,absent=0,late=0,excuse=0;
+      monthDates.forEach(d => {
+        const a = (DB.attendance[d]||{})[s.id];
+        if (!a) return;
+        if (a.status==='present') present++;
+        else if (a.status==='absent') absent++;
+        else if (a.status==='late') late++;
+        else if (a.status==='excuse') excuse++;
+      });
+      const total = present+absent+late+excuse;
+      const rate = total ? Math.round(present/total*100) : 0;
+      return `<tr>
+        <td><div class="student-info">
+          <div class="student-avatar ${avatarColor(s.name)}" style="width:30px;height:30px;font-size:11px">${initials(s.name)}</div>
+          <div><div style="font-weight:600;font-size:13px">${s.name}</div><div style="font-size:11px;color:var(--text-light)">${getClass(s.classId).name||''}</div></div>
+        </div></td>
+        <td style="text-align:center"><span class="badge badge-success">${present}</span></td>
+        <td style="text-align:center"><span class="badge badge-danger">${absent}</span></td>
+        <td style="text-align:center"><span class="badge badge-orange">${late}</span></td>
+        <td style="text-align:center"><span class="badge badge-purple">${excuse}</span></td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="flex:1;background:var(--bg);border-radius:4px;height:8px;overflow:hidden">
+              <div style="height:100%;width:${rate}%;background:${rate>=80?'var(--success)':rate>=60?'var(--warning)':'var(--danger)'};border-radius:4px"></div>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:${rate>=80?'var(--success)':rate>=60?'var(--warning)':'var(--danger)'}">${rate}%</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+    c.innerHTML = `
+      <div class="report-header">
+        <div class="rh-icon">🗓️</div>
+        <div><h2>التقرير الشهري</h2>
+        <p>${now.toLocaleDateString('ar-SA',{year:'numeric',month:'long'})}</p></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>ملخص الحضور الشهري</h3></div>
+        <div style="overflow:auto">
+          <table>
+            <thead><tr><th>الطالب</th><th>حاضر</th><th>غائب</th><th>متأخر</th><th>بعذر</th><th>نسبة الحضور</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  } else if (currentReportTab === 'student') {
+    const opts = DB.students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    c.innerHTML = `
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-header"><h3>تقرير طالب</h3></div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">اختر الطالب</label>
+              <select class="form-control" id="reportStudentSelect" onchange="renderStudentReport()">
+                <option value="">-- اختر --</option>${opts}
+              </select>
+            </div>
+          </div>
+          <div id="studentReportResult"></div>
+        </div>
+      </div>`;
+  }
+}
+
+function renderStudentReport() {
+  const sid = document.getElementById('reportStudentSelect').value;
+  if (!sid) return;
+  const s = getStudent(sid);
+  const absences = [];
+  Object.entries(DB.attendance).sort().forEach(([date, dayData]) => {
+    const a = dayData[sid];
+    if (a && a.status !== 'unset') absences.push({date, ...a});
+  });
+  const counts = {present:0,absent:0,late:0,excuse:0};
+  absences.forEach(a => { if(counts[a.status]!==undefined) counts[a.status]++; });
+  const total = Object.values(counts).reduce((a,b)=>a+b,0);
+  const rate = total ? Math.round(counts.present/total*100) : 0;
+
+  document.getElementById('studentReportResult').innerHTML = `
+    <div style="display:flex;gap:16px;margin:16px 0;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px;background:var(--bg);border-radius:12px;padding:16px">
+        <div class="student-info" style="gap:12px">
+          <div class="student-avatar ${avatarColor(s.name)}" style="width:52px;height:52px;font-size:18px">${initials(s.name)}</div>
+          <div>
+            <div style="font-size:17px;font-weight:800">${s.name}</div>
+            <div style="color:var(--text-light);font-size:13px">${s.studentId} | ${getClass(s.classId).name||''}</div>
+            <div style="color:var(--text-light);font-size:13px">📱 ${s.phone}</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="background:rgba(16,185,129,.1);border-radius:10px;padding:14px 18px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--success)">${counts.present}</div>
+          <div style="font-size:12px;color:var(--text-light)">حاضر</div>
+        </div>
+        <div style="background:rgba(239,68,68,.1);border-radius:10px;padding:14px 18px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--danger)">${counts.absent}</div>
+          <div style="font-size:12px;color:var(--text-light)">غائب</div>
+        </div>
+        <div style="background:rgba(249,115,22,.1);border-radius:10px;padding:14px 18px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--late)">${counts.late}</div>
+          <div style="font-size:12px;color:var(--text-light)">متأخر</div>
+        </div>
+        <div style="background:rgba(139,92,246,.1);border-radius:10px;padding:14px 18px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--excuse)">${counts.excuse}</div>
+          <div style="font-size:12px;color:var(--text-light)">بعذر</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:14px 18px;text-align:center">
+          <div style="font-size:22px;font-weight:800;color:var(--secondary)">${rate}%</div>
+          <div style="font-size:12px;color:var(--text-light)">نسبة الحضور</div>
+        </div>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>التاريخ</th><th>الحالة</th><th>الملاحظة</th></tr></thead>
+      <tbody>${absences.map(a=>`<tr>
+        <td>${formatDate(a.date)}</td>
+        <td>${statusBadge(a.status)}</td>
+        <td style="font-size:13px;color:var(--text-light)">${a.note||'-'}</td>
+      </tr>`).join('')||'<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-light)">لا توجد سجلات</td></tr>'}
+      </tbody>
+    </table>`;
+}
+
+// ==================== ANALYTICS ====================
+function renderAnalytics() {
+  const classes = DB.classes.map(c => {
+    const students = DB.students.filter(s => s.classId === c.id);
+    let totalAbs = 0;
+    students.forEach(s => totalAbs += studentAbsenceCount(s.id));
+    const avg = students.length ? (totalAbs/students.length).toFixed(1) : 0;
+    return { ...c, students: students.length, avgAbsence: avg };
+  });
+
+  const maxAvg = Math.max(...classes.map(c=>parseFloat(c.avgAbsence)),1);
+  const barsHtml = classes.map(c => {
+    const pct = maxAvg ? Math.round(parseFloat(c.avgAbsence)/maxAvg*100) : 0;
+    return `<div class="chart-bar-row">
+      <div class="chart-bar-label">${c.name}</div>
+      <div class="chart-bar-bg">
+        <div class="chart-bar-fill" style="width:${pct}%;background:var(--secondary)">
+          <span class="chart-bar-val">${c.avgAvsence||c.avgAbsence} يوم</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Monthly trend (last 4 weeks)
+  const weeks = [];
+  for (let w=3; w>=0; w--) {
+    let total=0, days=0;
+    for (let d=0; d<7; d++) {
+      const dt = new Date(); dt.setDate(dt.getDate()-w*7-d);
+      const dateStr = dt.toISOString().slice(0,10);
+      const att = DB.attendance[dateStr] || {};
+      let absent = Object.values(att).filter(a=>a.status==='absent'||a.status==='excuse').length;
+      if(Object.keys(att).length) { total += absent; days++; }
+    }
+    weeks.push({ label: `الأسبوع ${4-w}`, avg: days ? (total/days).toFixed(1) : 0 });
+  }
+  const maxW = Math.max(...weeks.map(w=>parseFloat(w.avg)),1);
+
+  document.getElementById('analyticsContent').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
+      <div class="card">
+        <div class="card-header"><h3>📊 متوسط الغياب بالفصل</h3></div>
+        <div class="card-body"><div class="chart-bar-wrap">${barsHtml||'<div class="empty-state"><p>لا توجد بيانات</p></div>'}</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>📈 اتجاه الغياب الأسبوعي</h3></div>
+        <div class="card-body">
+          <div class="chart-bar-wrap">
+            ${weeks.map(w=>`<div class="chart-bar-row">
+              <div class="chart-bar-label">${w.label}</div>
+              <div class="chart-bar-bg">
+                <div class="chart-bar-fill" style="width:${maxW?Math.round(parseFloat(w.avg)/maxW*100):0}%;background:var(--warning)">
+                  <span class="chart-bar-val">${w.avg}</span>
+                </div>
+              </div>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>🏆 ترتيب الفصول بنسبة الحضور</h3></div>
+      <div style="overflow:auto">
+        <table>
+          <thead><tr><th>#</th><th>الفصل</th><th>عدد الطلاب</th><th>متوسط الغياب</th><th>تقدير</th></tr></thead>
+          <tbody>
+            ${classes.sort((a,b)=>parseFloat(a.avgAbsence)-parseFloat(b.avgAbsence)).map((c,i)=>`<tr>
+              <td>${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</td>
+              <td><strong>${c.name}</strong></td>
+              <td>${c.students} طالب</td>
+              <td><span class="badge ${parseFloat(c.avgAbsence)<1?'badge-success':parseFloat(c.avgAbsence)<3?'badge-warning':'badge-danger'}">${c.avgAbsence} يوم</span></td>
+              <td>${parseFloat(c.avgAbsence)<1?'ممتاز 🌟':parseFloat(c.avgAbsence)<2?'جيد جداً ✅':parseFloat(c.avgAbsence)<3?'جيد':'يحتاج متابعة ⚠️'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// ==================== WHATSAPP ====================
+const templates = {
+  absent: `السلام عليكم ورحمة الله وبركاته
+ولي أمر الطالب الكريم / {parent}
+
+نُعلمكم بأن ابنكم/ابنتكم الطالب/ة:
+📌 *{name}*
+تغيب عن الدراسة اليوم بتاريخ: *{date}*
+
+نرجو منكم التواصل مع إدارة المدرسة لمعرفة سبب الغياب.
+
+📞 مدرسة: {school}
+مع التحية والتقدير`,
+  excuse: `السلام عليكم ورحمة الله
+ولي أمر الطالب / {parent}
+
+نُعلمكم باستلام عذر غياب طالبكم:
+📌 *{name}*
+بتاريخ: *{date}*
+
+تم قيد العذر في السجلات. شكراً لتعاونكم.
+
+📞 {school}`,
+  late: `ولي أمر الطالب / {parent}
+
+نُنبهكم إلى أن طالبكم:
+📌 *{name}*
+تأخر عن الحضور اليوم بتاريخ: *{date}*
+
+نرجو الاهتمام بالحضور في الوقت المحدد.
+مع التحية، إدارة {school}`,
+  warning: `⚠️ تنبيه مهم - {school}
+
+ولي أمر الطالب / {parent}
+
+نُعلمكم بأن طالبكم *{name}* قد تجاوز الحد المسموح به من أيام الغياب.
+
+عدد أيام الغياب: *{absCount} يوم*
+الحد المسموح: *{limit} يوم*
+
+نرجو مراجعة المدرسة في أقرب وقت ممكن.`
+};
+
+function updateTemplate() {
+  const type = document.getElementById('templateType').value;
+  document.getElementById('waTemplate').textContent = templates[type];
+}
+
+function renderWhatsapp() {
+  updateTemplate();
+  const d = today();
+  const att = DB.attendance[d] || {};
+  const absentStudents = DB.students.filter(s => {
+    const a = att[s.id];
+    return a && (a.status === 'absent' || a.status === 'excuse' || a.status === 'late');
+  });
+
+  document.getElementById('waStudentList').innerHTML = absentStudents.map(s => {
+    const a = att[s.id];
+    return `<tr>
+      <td><div class="student-info">
+        <div class="student-avatar ${avatarColor(s.name)}" style="width:28px;height:28px;font-size:10px">${initials(s.name)}</div>
+        <span style="font-size:13px;margin-right:6px">${s.name}</span>
+      </div></td>
+      <td>${statusBadge(a.status)}</td>
+      <td><button class="btn btn-whatsapp btn-sm" onclick="sendWhatsapp('${s.id}')">📱 إرسال</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="3" style="text-align:center;padding:20px;color:var(--text-light)">لا يوجد غياب اليوم 🎉</td></tr>';
+}
+
+function buildMessage(studentId, type) {
+  const s = getStudent(studentId);
+  const d = today();
+  const a = getAttendance(studentId, d);
+  const t = type || { absent:'absent', excuse:'excuse', late:'late' }[a.status] || 'absent';
+  let msg = templates[t]
+    .replace(/{name}/g, s.name)
+    .replace(/{parent}/g, s.parent || 'ولي الأمر')
+    .replace(/{date}/g, formatDate(d))
+    .replace(/{school}/g, DB.settings.schoolName)
+    .replace(/{absCount}/g, studentAbsenceCount(studentId))
+    .replace(/{limit}/g, DB.settings.absenceLimit);
+  return msg;
+}
+
+function sendWhatsapp(studentId) {
+  const s = getStudent(studentId);
+  const msg = buildMessage(studentId);
+  const phone = s.phone.replace(/\D/g,'');
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+  showToast(`تم فتح واتساب لـ ${s.parent || s.name}`, '📱');
+}
+
+function sendBulkWhatsapp() {
+  const d = today();
+  const att = DB.attendance[d] || {};
+  const absentStudents = DB.students.filter(s => {
+    const a = att[s.id];
+    return a && (a.status === 'absent' || a.status === 'excuse' || a.status === 'late');
+  });
+  if (!absentStudents.length) { showToast('لا يوجد غياب اليوم', 'ℹ️'); return; }
+  absentStudents.forEach((s, i) => {
+    setTimeout(() => sendWhatsapp(s.id), i * 1500);
+  });
+  showToast(`جاري إرسال ${absentStudents.length} رسالة...`, '📱');
+}
+
+// ==================== MODALS ====================
+let editingStudentId = null;
+
+function openAddStudentModal() {
+  editingStudentId = null;
+  document.getElementById('studentModalTitle').textContent = 'إضافة طالب جديد';
+  document.getElementById('sName').value = '';
+  document.getElementById('sId').value = '';
+  document.getElementById('sParent').value = '';
+  document.getElementById('sPhone').value = '';
+  // Populate class select
+  const sc = document.getElementById('sClass');
+  sc.innerHTML = '<option value="">اختر الفصل</option>';
+  DB.classes.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name; sc.appendChild(opt);
+  });
+  openModal('addStudentModal');
+}
+
+function editStudent(id) {
+  const s = getStudent(id);
+  editingStudentId = id;
+  document.getElementById('studentModalTitle').textContent = 'تعديل بيانات الطالب';
+  document.getElementById('sName').value = s.name;
+  document.getElementById('sId').value = s.studentId;
+  document.getElementById('sParent').value = s.parent;
+  document.getElementById('sPhone').value = s.phone;
+  document.getElementById('sGender').value = s.gender;
+  const sc = document.getElementById('sClass');
+  sc.innerHTML = '<option value="">اختر الفصل</option>';
+  DB.classes.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name; sc.appendChild(opt);
+  });
+  sc.value = s.classId;
+  openModal('addStudentModal');
+}
+
+function saveStudent() {
+  const name = document.getElementById('sName').value.trim();
+  const classId = document.getElementById('sClass').value;
+  const phone = document.getElementById('sPhone').value.trim();
+  if (!name || !classId) { showToast('يرجى ملء الحقول المطلوبة', '⚠️'); return; }
+  
+  if (editingStudentId) {
+    const idx = DB.students.findIndex(s => s.id === editingStudentId);
+    DB.students[idx] = {
+      ...DB.students[idx],
+      name, classId, phone,
+      studentId: document.getElementById('sId').value,
+      parent: document.getElementById('sParent').value,
+      gender: document.getElementById('sGender').value,
+    };
+    showToast('تم تحديث بيانات الطالب', '✅');
+  } else {
+    DB.students.push({
+      id: 's'+Date.now(),
+      name, classId, phone,
+      studentId: document.getElementById('sId').value || ('2025'+String(DB.students.length+1).padStart(3,'0')),
+      parent: document.getElementById('sParent').value,
+      gender: document.getElementById('sGender').value,
+    });
+    showToast('تمت إضافة الطالب بنجاح', '✅');
+  }
+  saveDB();
+  closeModal('addStudentModal');
+  renderStudentTable();
+}
+
+function deleteStudent(id) {
+  if (!confirm('هل أنت متأكد من حذف هذا الطالب؟')) return;
+  DB.students = DB.students.filter(s => s.id !== id);
+  saveDB();
+  renderStudentTable();
+  showToast('تم حذف الطالب', '🗑️');
+}
+
+function openAddClassModal() {
+  document.getElementById('cName').value = '';
+  document.getElementById('cTeacher').value = '';
+  openModal('addClassModal');
+}
+
+function saveClass() {
+  const name = document.getElementById('cName').value.trim();
+  if (!name) { showToast('يرجى إدخال اسم الفصل', '⚠️'); return; }
+  DB.classes.push({
+    id: 'c'+Date.now(),
+    name,
+    level: document.getElementById('cLevel').value,
+    teacher: document.getElementById('cTeacher').value,
+  });
+  saveDB();
+  closeModal('addClassModal');
+  renderClasses();
+  showToast('تمت إضافة الفصل بنجاح', '✅');
+}
+
+function deleteClass(id) {
+  if (!confirm('هل أنت متأكد من حذف هذا الفصل؟ سيتم حذف جميع الطلاب المرتبطين به.')) return;
+  DB.classes = DB.classes.filter(c => c.id !== id);
+  DB.students = DB.students.filter(s => s.classId !== id);
+  saveDB();
+  renderClasses();
+  showToast('تم حذف الفصل', '🗑️');
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ==================== SETTINGS ====================
+function loadSettings() {
+  document.getElementById('schoolName').value = DB.settings.schoolName;
+  document.getElementById('absenceLimit').value = DB.settings.absenceLimit;
+  document.getElementById('lateLimit').value = DB.settings.lateLimit;
+  document.getElementById('schoolStart').value = DB.settings.schoolStart;
+  document.getElementById('defaultMsg').value = DB.settings.defaultMsg;
+}
+
+function saveSettings() {
+  DB.settings.schoolName = document.getElementById('schoolName').value;
+  DB.settings.absenceLimit = parseInt(document.getElementById('absenceLimit').value);
+  DB.settings.lateLimit = parseInt(document.getElementById('lateLimit').value);
+  DB.settings.schoolStart = document.getElementById('schoolStart').value;
+  DB.settings.defaultMsg = document.getElementById('defaultMsg').value;
+  saveDB();
+  showToast('تم حفظ الإعدادات', '✅');
+}
+
+// ==================== TOAST ====================
+function showToast(msg, icon='✅') {
+  const tc = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<span style="font-size:18px">${icon}</span><span>${msg}</span>`;
+  tc.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(-100%)'; t.style.transition='all .3s'; setTimeout(()=>t.remove(),300); }, 3000);
+}
+
+// ==================== EXCEL IMPORT ====================
+
+let xlWorkbook = null;
+let xlRawData = [];
+let xlColumns = [];
+let xlPreviewData = [];
+let currentImportStep = 1;
+
+function openExcelImport() {
+  resetImport();
+  // Populate default class selector
+  const sel = document.getElementById('defaultClassForImport');
+  sel.innerHTML = '<option value="">-- اختر فصلاً --</option>';
+  DB.classes.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.name; sel.appendChild(opt);
+  });
+  openModal('excelImportModal');
+}
+
+function resetImport() {
+  xlWorkbook = null; xlRawData = []; xlColumns = []; xlPreviewData = [];
+  currentImportStep = 1;
+  goImportStep(1);
+  document.getElementById('excelFileInput').value = '';
+  document.getElementById('previewWrap').innerHTML = '';
+  document.getElementById('importSummary').innerHTML = '';
+  // Reset drop zone
+  const dz = document.getElementById('dropZone');
+  dz.classList.remove('drag-over');
+}
+
+function goImportStep(n) {
+  currentImportStep = n;
+  [1,2,3,4].forEach(i => {
+    document.getElementById('importStep'+i).style.display = i === n ? 'block' : 'none';
+    const stepEl = document.getElementById('step'+i+'El');
+    stepEl.classList.remove('active','done');
+    if (i < n) stepEl.classList.add('done');
+    if (i === n) stepEl.classList.add('active');
+  });
+}
+
+// ---- Drag & Drop ----
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.add('drag-over');
+}
+function handleDragLeave(e) {
+  document.getElementById('dropZone').classList.remove('drag-over');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+// ---- Process File ----
+function processFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['xlsx','xls','csv'].includes(ext)) {
+    showToast('صيغة الملف غير مدعومة. يرجى استخدام .xlsx أو .xls أو .csv', '⚠️');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      xlWorkbook = XLSX.read(data, { type: 'array', codepage: 65001 });
+
+      // Populate sheet selector
+      const sheetSel = document.getElementById('sheetSelect');
+      sheetSel.innerHTML = '';
+      xlWorkbook.SheetNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name; opt.textContent = name; sheetSel.appendChild(opt);
+      });
+
+      document.getElementById('fileNameDisplay').textContent = '📗 ' + file.name;
+      loadSheet();
+      goImportStep(2);
+    } catch(err) {
+      showToast('خطأ في قراءة الملف: ' + err.message, '⚠️');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function loadSheet() {
+  const sheetName = document.getElementById('sheetSelect').value;
+  const ws = xlWorkbook.Sheets[sheetName];
+  const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+
+  xlRawData = raw.filter(row => row.some(cell => cell !== ''));
+
+  const headerRow = xlRawData[0] || [];
+  xlColumns = headerRow.map((h, i) => ({
+    index: i,
+    label: h || `عمود ${i+1}`,
+    original: h
+  }));
+
+  document.getElementById('sheetInfo').textContent =
+    `${xlRawData.length} صف | ${xlColumns.length} عمود | الورقة: ${sheetName}`;
+
+  // Auto-detect columns
+  populateColumnMappers();
+}
+
+function populateColumnMappers() {
+  const mapIds = ['mapName','mapStudentId','mapClass','mapGender','mapParent','mapPhone'];
+  const noneOpt = '<option value="">-- لا يوجد --</option>';
+
+  mapIds.forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = noneOpt + xlColumns.map(c =>
+      `<option value="${c.index}">${c.label}</option>`
+    ).join('');
+  });
+
+  // Smart auto-detect
+  const hints = {
+    mapName:      ['اسم الطالب','اسم','الاسم','name','student name','الاسم الكامل','student_name'],
+    mapStudentId: ['رقم الطالب','الرقم','رقم','id','student id','رقم_الطالب','student_id','رقم القيد'],
+    mapClass:     ['الفصل','فصل','class','الشعبة','شعبة','صف','grade'],
+    mapGender:    ['الجنس','جنس','gender','النوع'],
+    mapParent:    ['ولي الأمر','ولي','parent','guardian','اسم الولي','ولي_الأمر'],
+    mapPhone:     ['رقم الجوال','الجوال','جوال','phone','هاتف','mobile','رقم_الجوال','رقم الهاتف','واتساب'],
+  };
+
+  Object.entries(hints).forEach(([selId, keywords]) => {
+    const sel = document.getElementById(selId);
+    for (const col of xlColumns) {
+      const lbl = col.label.toString().toLowerCase().trim();
+      if (keywords.some(k => lbl.includes(k.toLowerCase()))) {
+        sel.value = col.index;
+        break;
+      }
+    }
+  });
+}
+
+// ---- Preview ----
+function previewImport() {
+  const nameIdx   = document.getElementById('mapName').value;
+  const idIdx     = document.getElementById('mapStudentId').value;
+
+  if (nameIdx === '' || idIdx === '') {
+    showToast('يرجى تحديد عمود اسم الطالب ورقمه على الأقل', '⚠️');
+    return;
+  }
+
+  const classIdx  = document.getElementById('mapClass').value;
+  const genderIdx = document.getElementById('mapGender').value;
+  const parentIdx = document.getElementById('mapParent').value;
+  const phoneIdx  = document.getElementById('mapPhone').value;
+  const skipHeader = document.getElementById('skipHeader').checked;
+  const skipDups  = document.getElementById('skipDuplicates').checked;
+  const defClass  = document.getElementById('defaultClassForImport').value;
+
+  const startRow = skipHeader ? 1 : 0;
+  const existingIds = new Set(DB.students.map(s => s.studentId.toString().trim()));
+  const seenIds = new Set();
+
+  xlPreviewData = [];
+
+  for (let i = startRow; i < xlRawData.length; i++) {
+    const row = xlRawData[i];
+    const name = (row[nameIdx] || '').toString().trim();
+    const sid  = (row[idIdx]  || '').toString().trim();
+
+    let status = 'ok';
+    let statusMsg = '';
+
+    if (!name || !sid) {
+      status = 'err';
+      statusMsg = !name ? 'اسم الطالب فارغ' : 'رقم الطالب فارغ';
+    } else if (existingIds.has(sid)) {
+      status = 'dup';
+      statusMsg = 'رقم الطالب موجود مسبقاً';
+    } else if (seenIds.has(sid)) {
+      status = 'dup';
+      statusMsg = 'مكرر في الملف';
+    }
+
+    if (status === 'ok') seenIds.add(sid);
+
+    // Resolve class
+    let classId = defClass || '';
+    const rawClass = classIdx !== '' ? (row[classIdx] || '').toString().trim() : '';
+    if (rawClass) {
+      const found = DB.classes.find(c =>
+        c.name.includes(rawClass) || rawClass.includes(c.name)
+      );
+      if (found) classId = found.id;
+      else classId = defClass || '';
+    }
+
+    xlPreviewData.push({
+      rowNum: i + 1,
+      name,
+      studentId: sid,
+      classId,
+      rawClass,
+      gender: genderIdx !== '' ? (row[genderIdx] || 'ذكر').toString().trim() : 'ذكر',
+      parent: parentIdx !== '' ? (row[parentIdx] || '').toString().trim() : '',
+      phone:  phoneIdx  !== '' ? (row[phoneIdx]  || '').toString().trim() : '',
+      status,
+      statusMsg,
+    });
+  }
+
+  // Render summary
+  const okCount  = xlPreviewData.filter(r => r.status === 'ok').length;
+  const dupCount = xlPreviewData.filter(r => r.status === 'dup').length;
+  const errCount = xlPreviewData.filter(r => r.status === 'err').length;
+
+  document.getElementById('importSummary').innerHTML = `
+    <div class="import-sum-item isi-total"><div class="isi-val">${xlPreviewData.length}</div><div class="isi-lbl">إجمالي الصفوف</div></div>
+    <div class="import-sum-item isi-ok"><div class="isi-val">${okCount}</div><div class="isi-lbl">✅ سيتم استيراده</div></div>
+    <div class="import-sum-item isi-dup"><div class="isi-val">${dupCount}</div><div class="isi-lbl">🟡 مكرر (سيُتخطى)</div></div>
+    <div class="import-sum-item isi-err"><div class="isi-val">${errCount}</div><div class="isi-lbl">❌ بيانات ناقصة</div></div>`;
+
+  const importBtn = document.getElementById('importConfirmBtn');
+  importBtn.textContent = `✅ استيراد ${okCount} طالب`;
+  importBtn.disabled = okCount === 0;
+  if (okCount === 0) importBtn.style.opacity = '.5';
+  else importBtn.style.opacity = '1';
+
+  renderPreviewTable('all');
+  goImportStep(3);
+}
+
+let currentFilter = 'all';
+function filterPreview(f) {
+  currentFilter = f;
+  ['all','ok','dup','err'].forEach(id => {
+    document.getElementById('filter'+id[0].toUpperCase()+id.slice(1)).classList.remove('btn-primary');
+    document.getElementById('filter'+id[0].toUpperCase()+id.slice(1)).classList.add('btn-outline');
+  });
+  document.getElementById('filter'+f[0].toUpperCase()+f.slice(1)).classList.replace('btn-outline','btn-primary');
+  renderPreviewTable(f);
+}
+
+function renderPreviewTable(filter) {
+  const rows = filter === 'all' ? xlPreviewData : xlPreviewData.filter(r => r.status === filter);
+  const dotClass = { ok: 'dot-ok', dup: 'dot-dup', err: 'dot-err' };
+  const rowClass = { ok: 'preview-row-ok', dup: 'preview-row-dup', err: 'preview-row-err' };
+  const statusLabel = { ok: '✅ صالح', dup: '🟡 مكرر', err: '❌ خطأ' };
+
+  document.getElementById('previewWrap').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>#</th><th>اسم الطالب</th><th>رقم الطالب</th>
+        <th>الفصل</th><th>الجنس</th><th>ولي الأمر</th><th>الجوال</th><th>الحالة</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r => `<tr class="${rowClass[r.status]}">
+          <td style="font-size:12px;color:var(--text-light)">${r.rowNum}</td>
+          <td><span class="row-status-dot ${dotClass[r.status]}"></span> <strong>${r.name||'—'}</strong></td>
+          <td style="font-family:monospace">${r.studentId||'—'}</td>
+          <td style="font-size:12px">${r.rawClass ? (DB.classes.find(c=>c.id===r.classId)?.name||r.rawClass) : (DB.classes.find(c=>c.id===r.classId)?.name||'—')}</td>
+          <td style="font-size:12px">${r.gender||'—'}</td>
+          <td style="font-size:12px">${r.parent||'—'}</td>
+          <td style="font-size:12px;direction:ltr">${r.phone||'—'}</td>
+          <td><span class="badge ${r.status==='ok'?'badge-success':r.status==='dup'?'badge-warning':'badge-danger'}" style="font-size:11px">${statusLabel[r.status]}</span>
+          ${r.statusMsg?`<div style="font-size:10px;color:var(--text-light);margin-top:2px">${r.statusMsg}</div>`:''}
+          </td>
+        </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-light)">لا توجد صفوف بهذه الحالة</td></tr>'}
+      </tbody>
+    </table>`;
+}
+
+// ---- Do Import ----
+function doImport() {
+  const skipDups = document.getElementById('skipDuplicates').checked;
+  const toImport = xlPreviewData.filter(r => r.status === 'ok');
+  const skipped  = xlPreviewData.filter(r => r.status === 'dup').length;
+  const errors   = xlPreviewData.filter(r => r.status === 'err').length;
+
+  toImport.forEach(r => {
+    DB.students.push({
+      id: 's' + Date.now() + Math.random().toString(36).slice(2,6),
+      name: r.name,
+      studentId: r.studentId,
+      classId: r.classId || '',
+      gender: r.gender || 'ذكر',
+      parent: r.parent || '',
+      phone: r.phone || '',
+    });
+  });
+
+  saveDB();
+  updatePendingBadge();
+
+  const msg = `تم استيراد <strong>${toImport.length}</strong> طالب بنجاح${skipped>0?` | تخطّي ${skipped} مكرر`:''}${errors>0?` | ${errors} صف بأخطاء`:''}`;
+  document.getElementById('importDoneMsg').innerHTML = msg;
+  document.getElementById('importDoneSummary').innerHTML = `
+    <div class="import-sum-item isi-ok"><div class="isi-val">${toImport.length}</div><div class="isi-lbl">تم استيراده</div></div>
+    <div class="import-sum-item isi-dup"><div class="isi-val">${skipped}</div><div class="isi-lbl">تم تخطيه</div></div>
+    <div class="import-sum-item isi-err"><div class="isi-val">${errors}</div><div class="isi-lbl">أخطاء</div></div>`;
+
+  goImportStep(4);
+  showToast(`تم استيراد ${toImport.length} طالب بنجاح 🎉`, '✅');
+}
+
+// ---- Download Sample ----
+function downloadSampleExcel() {
+  if (typeof XLSX === 'undefined') { showToast('مكتبة Excel غير محملة', '⚠️'); return; }
+
+  const sampleData = [
+    ['اسم الطالب',    'رقم الطالب', 'الفصل',           'الجنس', 'ولي الأمر',      'رقم الجوال'],
+    ['أحمد محمد علي', '2025001',    'الصف الأول أ',     'ذكر',   'محمد علي أحمد',  '966501234567'],
+    ['سارة عبدالله',  '2025002',    'الصف الأول ب',     'أنثى',  'عبدالله كريم',   '966502345678'],
+    ['يوسف خالد',     '2025003',    'الصف الثاني أ',    'ذكر',   'خالد يوسف',      '966503456789'],
+    ['نورة سعد',      '2025004',    'الصف الثالث أ',    'أنثى',  'سعد نايف',       '966504567890'],
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(sampleData);
+
+  // Style column widths
+  ws['!cols'] = [
+    {wch:22},{wch:14},{wch:18},{wch:8},{wch:20},{wch:18}
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'بيانات الطلاب');
+  XLSX.writeFile(wb, 'نموذج_استيراد_الطلاب.xlsx');
+  showToast('تم تحميل الملف النموذج ✅', '📗');
+}
+
+// ==================== PRINT REPORT ====================
+function printReport() {
+  window.print();
+}
+
+// ==================== AUTH SYSTEM ====================
+
+// Simple hash function (for browser-side use)
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString(16);
+}
+
+// Auth DB
+function loadAuthDB() {
+  const saved = localStorage.getItem('authDB');
+  if (saved) return JSON.parse(saved);
+  // Default users
+  const defaultAuth = {
+    users: [
+      {
+        id: 'u1',
+        username: 'admin',
+        passwordHash: simpleHash('Admin@1234'),
+        fullName: 'مدير النظام',
+        role: 'admin',
+        lastLogin: null,
+        active: true
+      },
+      {
+        id: 'u2',
+        username: 'teacher1',
+        passwordHash: simpleHash('Teacher@123'),
+        fullName: 'أ. محمد أحمد',
+        role: 'teacher',
+        lastLogin: null,
+        active: true
+      }
+    ],
+    loginAttempts: 0,
+    lockUntil: null,
+    currentUser: null
+  };
+  saveAuthDB(defaultAuth);
+  return defaultAuth;
+}
+function saveAuthDB(auth) {
+  localStorage.setItem('authDB', JSON.stringify(auth));
+}
+
+let Auth = loadAuthDB();
+let lockTimer = null;
+
+// ---- LOGIN ----
+function doLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const remember = document.getElementById('rememberMe').checked;
+  const errEl = document.getElementById('loginError');
+  const errMsg = document.getElementById('loginErrorMsg');
+  errEl.classList.remove('show');
+
+  // Check lock
+  if (Auth.lockUntil && Date.now() < Auth.lockUntil) {
+    showLockScreen();
+    return;
+  }
+
+  if (!username || !password) {
+    errMsg.textContent = 'يرجى إدخال اسم المستخدم وكلمة المرور';
+    errEl.classList.add('show');
+    return;
+  }
+
+  const user = Auth.users.find(u =>
+    u.username.toLowerCase() === username.toLowerCase() &&
+    u.passwordHash === simpleHash(password) &&
+    u.active
+  );
+
+  if (user) {
+    // Success
+    Auth.loginAttempts = 0;
+    Auth.lockUntil = null;
+    Auth.currentUser = user.id;
+    user.lastLogin = new Date().toISOString();
+    saveAuthDB(Auth);
+    if (remember) localStorage.setItem('rememberSession', user.id);
+    hideLoginScreen(user);
+  } else {
+    Auth.loginAttempts = (Auth.loginAttempts || 0) + 1;
+    const remaining = 5 - Auth.loginAttempts;
+
+    if (Auth.loginAttempts >= 5) {
+      Auth.lockUntil = Date.now() + 30000; // 30 seconds lock
+      saveAuthDB(Auth);
+      showLockScreen();
+      return;
+    }
+
+    saveAuthDB(Auth);
+    errMsg.textContent = `اسم المستخدم أو كلمة المرور غير صحيحة`;
+    errEl.classList.add('show');
+    if (remaining <= 2) {
+      document.getElementById('attemptsInfo').textContent = `⚠️ تبقى ${remaining} محاولة قبل قفل الحساب`;
+    }
+    // Shake the card
+    const card = document.querySelector('.login-card');
+    card.style.animation = 'none';
+    setTimeout(() => card.style.animation = 'loginCardIn .6s cubic-bezier(.34,1.56,.64,1)', 10);
+  }
+}
+
+function showLockScreen() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('lockedForm').style.display = 'block';
+  startLockCountdown();
+}
+
+function startLockCountdown() {
+  if (lockTimer) clearInterval(lockTimer);
+  lockTimer = setInterval(() => {
+    const remaining = Math.ceil((Auth.lockUntil - Date.now()) / 1000);
+    if (remaining <= 0) {
+      clearInterval(lockTimer);
+      Auth.loginAttempts = 0;
+      Auth.lockUntil = null;
+      saveAuthDB(Auth);
+      document.getElementById('lockedForm').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+      document.getElementById('attemptsInfo').textContent = '';
+    } else {
+      document.getElementById('lockCountdown').textContent = remaining;
+    }
+  }, 1000);
+}
+
+function hideLoginScreen(user) {
+  const screen = document.getElementById('loginScreen');
+  screen.style.transition = 'opacity .5s, transform .5s';
+  screen.style.opacity = '0';
+  screen.style.transform = 'scale(1.05)';
+  setTimeout(() => {
+    screen.style.display = 'none';
+    updateTopbarUser(user);
+    // Hide admin features for non-admins
+    if (user.role !== 'admin') {
+      const mgBtn = document.getElementById('manageUsersBtn');
+      if (mgBtn) mgBtn.style.display = 'none';
+    }
+    showToast(`أهلاً ${user.fullName} 👋`, '✅');
+  }, 500);
+}
+
+function updateTopbarUser(user) {
+  document.getElementById('topUserAvatar').textContent = user.fullName[0];
+  document.getElementById('topUserName').textContent = user.fullName;
+  const roles = { admin: '🔴 مدير النظام', teacher: '🟡 معلم', viewer: '🟢 مشاهد' };
+  document.getElementById('topUserRole').textContent = roles[user.role] || user.role;
+}
+
+function doLogout() {
+  localStorage.removeItem('rememberSession');
+  Auth.currentUser = null;
+  saveAuthDB(Auth);
+  const screen = document.getElementById('loginScreen');
+  screen.style.display = 'flex';
+  screen.style.opacity = '0';
+  screen.style.transform = 'scale(1.05)';
+  setTimeout(() => {
+    screen.style.transition = 'opacity .4s, transform .4s';
+    screen.style.opacity = '1';
+    screen.style.transform = 'scale(1)';
+  }, 10);
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').classList.remove('show');
+  document.getElementById('attemptsInfo').textContent = '';
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('lockedForm').style.display = 'none';
+  toggleUserDropdown(true);
+}
+
+// ---- CHANGE PASSWORD ----
+function checkStrength() {
+  const pass = document.getElementById('newPass').value;
+  const fill = document.getElementById('strengthFill');
+  const label = document.getElementById('strengthLabel');
+  let score = 0;
+  if (pass.length >= 8) score++;
+  if (/[A-Z]/.test(pass)) score++;
+  if (/[0-9]/.test(pass)) score++;
+  if (/[^A-Za-z0-9]/.test(pass)) score++;
+  const levels = [
+    { w:'0%', c:'', t:'' },
+    { w:'25%', c:'var(--danger)', t:'ضعيفة جداً' },
+    { w:'50%', c:'var(--warning)', t:'مقبولة' },
+    { w:'75%', c:'#84cc16', t:'جيدة' },
+    { w:'100%', c:'var(--success)', t:'قوية جداً 💪' },
+  ];
+  const lvl = levels[score] || levels[0];
+  fill.style.width = lvl.w;
+  fill.style.background = lvl.c;
+  label.textContent = lvl.t;
+  label.style.color = lvl.c;
+}
+
+function doChangePassword() {
+  const curPass = document.getElementById('currentPass').value;
+  const newPass = document.getElementById('newPass').value;
+  const confPass = document.getElementById('confirmPass').value;
+
+  const currentUser = Auth.users.find(u => u.id === Auth.currentUser);
+  if (!currentUser) return;
+
+  if (currentUser.passwordHash !== simpleHash(curPass)) {
+    showToast('كلمة المرور الحالية غير صحيحة', '⚠️'); return;
+  }
+  if (newPass.length < 8) {
+    showToast('كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل', '⚠️'); return;
+  }
+  if (newPass !== confPass) {
+    showToast('كلمتا المرور غير متطابقتان', '⚠️'); return;
+  }
+
+  currentUser.passwordHash = simpleHash(newPass);
+  saveAuthDB(Auth);
+  closeModal('changePassModal');
+  document.getElementById('currentPass').value = '';
+  document.getElementById('newPass').value = '';
+  document.getElementById('confirmPass').value = '';
+  showToast('تم تغيير كلمة المرور بنجاح 🔐', '✅');
+}
+
+// ---- MANAGE USERS ----
+function renderUsersTable() {
+  const rows = Auth.users.map(u => {
+    const roles = { admin: '<span class="badge badge-danger">مدير</span>', teacher: '<span class="badge badge-warning">معلم</span>', viewer: '<span class="badge badge-blue">مشاهد</span>' };
+    const lastLogin = u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('ar-SA') : 'لم يدخل بعد';
+    const isCurrent = u.id === Auth.currentUser;
+    return `<tr>
+      <td><div class="student-info">
+        <div class="user-avatar" style="width:32px;height:32px;font-size:13px">${u.fullName[0]}</div>
+        <div><div style="font-weight:700;font-size:13px">${u.fullName}</div><div style="font-size:11px;color:var(--text-light)">@${u.username}</div></div>
+      </div></td>
+      <td>${roles[u.role]||u.role}</td>
+      <td style="font-size:12px;color:var(--text-light)">${lastLogin}</td>
+      <td>${u.active ? '<span class="badge badge-success">✅ نشط</span>' : '<span class="badge badge-danger">❌ موقوف</span>'}</td>
+      <td>
+        ${!isCurrent ? `
+          <button class="btn btn-outline btn-sm" onclick="toggleUserActive('${u.id}')">${u.active?'🔒 إيقاف':'✅ تفعيل'}</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">🗑️</button>
+        ` : '<span style="font-size:12px;color:var(--text-light)">أنت</span>'}
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('usersTbody').innerHTML = rows;
+}
+
+function addUser() {
+  const username = document.getElementById('newUsername').value.trim();
+  const password = document.getElementById('newUserPass').value;
+  const fullName = document.getElementById('newUserFullName').value.trim();
+  const role = document.getElementById('newUserRole').value;
+
+  if (!username || !password || !fullName) { showToast('يرجى ملء جميع الحقول', '⚠️'); return; }
+  if (password.length < 8) { showToast('كلمة المرور يجب أن تكون 8 أحرف على الأقل', '⚠️'); return; }
+  if (Auth.users.find(u => u.username.toLowerCase() === username.toLowerCase())) {
+    showToast('اسم المستخدم موجود مسبقاً', '⚠️'); return;
+  }
+
+  Auth.users.push({
+    id: 'u'+Date.now(),
+    username, fullName, role,
+    passwordHash: simpleHash(password),
+    lastLogin: null,
+    active: true
+  });
+  saveAuthDB(Auth);
+  document.getElementById('newUsername').value = '';
+  document.getElementById('newUserPass').value = '';
+  document.getElementById('newUserFullName').value = '';
+  renderUsersTable();
+  showToast('تمت إضافة المستخدم بنجاح', '✅');
+}
+
+function toggleUserActive(id) {
+  const user = Auth.users.find(u => u.id === id);
+  if (user) { user.active = !user.active; saveAuthDB(Auth); renderUsersTable(); }
+}
+
+function deleteUser(id) {
+  if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+  Auth.users = Auth.users.filter(u => u.id !== id);
+  saveAuthDB(Auth);
+  renderUsersTable();
+  showToast('تم حذف المستخدم', '🗑️');
+}
+
+// ---- HELPERS ----
+function openManageUsers() {
+  openModal('manageUsersModal');
+  renderUsersTable();
+}
+
+function togglePassVis(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈'; }
+  else { inp.type = 'password'; btn.textContent = '👁️'; }
+}
+
+function toggleUserDropdown(forceClose) {
+  const dd = document.getElementById('userDropdown');
+  if (forceClose) { dd.classList.remove('open'); return; }
+  dd.classList.toggle('open');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.user-menu')) {
+    document.getElementById('userDropdown')?.classList.remove('open');
+  }
+});
+
+// ---- FLOATING DOTS ----
+function createLoginDots() {
+  const container = document.getElementById('loginDots');
+  for (let i = 0; i < 12; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'login-dot';
+    const size = Math.random() * 60 + 20;
+    dot.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      animation-duration:${Math.random()*15+10}s;
+      animation-delay:${Math.random()*10}s;
+    `;
+    container.appendChild(dot);
+  }
+}
+
+// ---- CHECK REMEMBER SESSION ----
+function checkRememberSession() {
+  const savedId = localStorage.getItem('rememberSession');
+  if (savedId) {
+    Auth = loadAuthDB();
+    const user = Auth.users.find(u => u.id === savedId && u.active);
+    if (user) {
+      Auth.currentUser = user.id;
+      user.lastLogin = new Date().toISOString();
+      saveAuthDB(Auth);
+      hideLoginScreen(user);
+      return true;
+    }
+  }
+  return false;
+}
+
+// ==================== WARNING & PRINT SYSTEM ====================
+
+let currentWarnStudentId = null;
+let currentWarnLevel = 1;
+
+const warnLevelData = {
+  1: { title: 'إنذار أول', icon: '⚠️', color: '#f97316', bg: '#fff7ed', border: '#f97316', msg: 'نُحيطكم علماً بأن ابنكم/ابنتكم قد تجاوز/ت الحد المسموح به من أيام الغياب. نأمل التنبه لذلك والحرص على الانتظام.' },
+  2: { title: 'إنذار ثانٍ', icon: '🔔', color: '#d97706', bg: '#fefce8', border: '#f59e0b', msg: 'يُعدّ هذا الإنذار الثاني بسبب تراكم أيام الغياب. نُطالبكم بمراجعة المدرسة فوراً، وإلا سيُتخذ إجراء رسمي.' },
+  3: { title: 'إنذار نهائي', icon: '🚨', color: '#dc2626', bg: '#fef2f2', border: '#ef4444', msg: 'هذا إنذار نهائي وأخير. إن لم يُلتزم بالحضور المنتظم فسيُحال الأمر إلى الجهات المختصة وسيُعرّض الطالب لعواقب أكاديمية.' },
+};
+
+function openWarnPrint(studentId) {
+  currentWarnStudentId = studentId;
+  currentWarnLevel = 1;
+  document.getElementById('warnDate').value = today();
+  document.getElementById('warnNotes').value = '';
+  document.getElementById('warnTarget').value = 'parent';
+  setWarnLevel(1);
+  updatePrintPreview();
+  openModal('warnPrintModal');
+}
+
+function openBulkWarnPrint() {
+  // Find first student with warning
+  const limit = DB.settings.absenceLimit;
+  const warnStudents = DB.students.filter(s => studentAbsenceCount(s.id) >= limit);
+  if (!warnStudents.length) {
+    showToast('لا يوجد طلاب تجاوزوا حد الغياب', 'ℹ️');
+    return;
+  }
+  openWarnPrint(warnStudents[0].id);
+}
+
+function setWarnLevel(level) {
+  currentWarnLevel = level;
+  [1,2,3].forEach(l => {
+    const btn = document.getElementById('lvlBtn'+l);
+    btn.className = 'level-btn';
+    if (l === level) btn.classList.add('active-l'+l);
+  });
+  updatePrintPreview();
+}
+
+function updatePrintPreview() {
+  if (!currentWarnStudentId) return;
+  const s = getStudent(currentWarnStudentId);
+  const cls = getClass(s.classId);
+  const absCount = studentAbsenceCount(s.id);
+  const lvl = warnLevelData[currentWarnLevel];
+  const limit = DB.settings.absenceLimit;
+  const school = DB.settings.schoolName;
+  const warnDate = document.getElementById('warnDate')?.value || today();
+  const target = document.getElementById('warnTarget')?.value || 'parent';
+  const notes = document.getElementById('warnNotes')?.value || '';
+
+  const targetLabel = target === 'parent' ? `ولي أمر الطالب: ${s.parent || 'ولي الأمر'}` :
+                      target === 'student' ? `الطالب: ${s.name}` :
+                      `ولي أمر الطالب: ${s.parent || 'ولي الأمر'} والطالب: ${s.name}`;
+
+  const hijriDate = new Date(warnDate).toLocaleDateString('ar-SA-u-ca-islamic', { year:'numeric', month:'long', day:'numeric' });
+  const miladi = new Date(warnDate).toLocaleDateString('ar-SA', { year:'numeric', month:'long', day:'numeric' });
+
+  document.getElementById('printPreview').innerHTML = `
+    <div class="pp-watermark">${lvl.title}</div>
+
+    <div class="pp-header">
+      <div>
+        <div class="pp-school-name">🏫 ${school}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:4px">المملكة العربية السعودية — وزارة التعليم</div>
+      </div>
+      <div class="pp-logo">🏫</div>
+    </div>
+
+    <div class="pp-title" style="background:${lvl.bg};border-color:${lvl.border};color:${lvl.color}">
+      ${lvl.icon} ${lvl.title} غياب ${lvl.icon}
+    </div>
+
+    <div style="margin:12px 0;font-size:13px;color:#374151">
+      السادة المحترمون / <strong>${targetLabel}</strong>
+      <br>السلام عليكم ورحمة الله وبركاته،
+    </div>
+
+    <div class="pp-info-grid">
+      <div class="pp-info-item">
+        <div class="pp-info-label">اسم الطالب</div>
+        <div class="pp-info-value">${s.name}</div>
+      </div>
+      <div class="pp-info-item">
+        <div class="pp-info-label">رقم الطالب</div>
+        <div class="pp-info-value">${s.studentId}</div>
+      </div>
+      <div class="pp-info-item">
+        <div class="pp-info-label">الفصل الدراسي</div>
+        <div class="pp-info-value">${cls.name || '-'}</div>
+      </div>
+      <div class="pp-info-item">
+        <div class="pp-info-label">عدد أيام الغياب</div>
+        <div class="pp-info-value" style="color:${lvl.color};font-size:18px;font-weight:900">${absCount} يوم</div>
+      </div>
+      <div class="pp-info-item">
+        <div class="pp-info-label">الحد المسموح</div>
+        <div class="pp-info-value">${limit} أيام</div>
+      </div>
+      <div class="pp-info-item">
+        <div class="pp-info-label">التاريخ الميلادي</div>
+        <div class="pp-info-value">${miladi}</div>
+      </div>
+    </div>
+
+    <div class="pp-body-text">
+      ${lvl.msg}
+      ${notes ? `<br><br><strong>ملاحظة إضافية:</strong> ${notes}` : ''}
+    </div>
+
+    <div style="font-size:12px;color:#374151;margin-top:10px">
+      نأمل منكم التوقيع على هذا الإنذار وإعادته للمدرسة خلال <strong>3 أيام</strong> من استلامه.
+    </div>
+
+    <div class="pp-signature">
+      <div class="pp-sig-box">
+        <div class="pp-sig-line"></div>
+        <div class="pp-sig-label">توقيع ولي الأمر</div>
+      </div>
+      <div class="pp-sig-box">
+        <div class="pp-sig-line"></div>
+        <div class="pp-sig-label">توقيع مدير المدرسة</div>
+      </div>
+      <div class="pp-sig-box">
+        <div class="pp-sig-line"></div>
+        <div class="pp-sig-label">الختم الرسمي</div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:14px;font-size:10px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px">
+      ${school} — تاريخ الإصدار: ${miladi} | ${hijriDate}
+    </div>`;
+}
+
+function doPrint() {
+  window.print();
+}
+
+function sendWarnWhatsapp() {
+  if (!currentWarnStudentId) return;
+  const s = getStudent(currentWarnStudentId);
+  const absCount = studentAbsenceCount(s.id);
+  const lvl = warnLevelData[currentWarnLevel];
+  const limit = DB.settings.absenceLimit;
+  const school = DB.settings.schoolName;
+  const notes = document.getElementById('warnNotes')?.value || '';
+
+  const msg = `${lvl.icon} *${lvl.title} غياب — ${school}*\n\nالسادة المحترمون ولي أمر الطالب / ${s.parent || 'ولي الأمر'}\nالسلام عليكم ورحمة الله وبركاته،\n\nنُحيطكم علماً بأن ابنكم/ابنتكم:\n*الاسم:* ${s.name}\n*الفصل:* ${getClass(s.classId).name||'-'}\n*أيام الغياب:* ${absCount} يوم (الحد المسموح: ${limit})\n*التاريخ:* ${formatDate(today())}\n\n${lvl.msg}${notes?'\n\n📌 '+notes:''}\n\nنرجو التواصل مع إدارة المدرسة.\n${school}`;
+
+  const phone = s.phone.replace(/\D/g,'');
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  showToast('تم فتح واتساب لإرسال الإنذار', '📱');
+}
+
+// Also update dashboard to show warning banner
+function getDashboardWarnings() {
+  const limit = DB.settings.absenceLimit;
+  const warnings = DB.students.filter(s => studentAbsenceCount(s.id) >= limit);
+  return warnings;
+}
+
+// ==================== INIT ====================
+function init() {
+  createLoginDots();
+  // Check remember me session
+  if (!checkRememberSession()) {
+    // Show login screen - check if still locked
+    if (Auth.lockUntil && Date.now() < Auth.lockUntil) {
+      showLockScreen();
+    }
+  }
+
+  loadDB();
+  document.getElementById('currentDate').textContent = formatDate(today());
+  
+  // Add sample attendance data
+  if (!Object.keys(DB.attendance).length) {
+    const d = today();
+    if (!DB.attendance[d]) DB.attendance[d] = {};
+    const statuses = ['present','present','present','absent','late','excuse','present','present','absent','present'];
+    DB.students.forEach((s,i) => {
+      DB.attendance[d][s.id] = { status: statuses[i % statuses.length], note: '' };
+    });
+    // Add some historical data
+    for (let i=1; i<=14; i++) {
+      const dt = new Date(); dt.setDate(dt.getDate()-i);
+      const dateStr = dt.toISOString().slice(0,10);
+      DB.attendance[dateStr] = {};
+      DB.students.forEach(s => {
+        const r = Math.random();
+        const status = r > 0.85 ? 'absent' : r > 0.78 ? 'late' : r > 0.72 ? 'excuse' : 'present';
+        DB.attendance[dateStr][s.id] = { status, note: '' };
+      });
+    }
+    saveDB();
+  }
+
+  updatePendingBadge();
+  renderDashboard();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+</script>
+</body>
+</html>
